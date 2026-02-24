@@ -25,6 +25,19 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-sqlite",
+      "expo-localization"
+    ],
+    "extra": {
+      "reactNative": {
+        "I18nManager": {
+          "allowRTL": true,
+          "forceRTL": true,
+          "doLeftAndRightSwapInRTL": true
+        }
+      }
     }
   }
 }

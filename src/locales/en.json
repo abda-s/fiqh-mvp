@@ -1,0 +1,48 @@
+{
+    "common": {
+        "loading": "Loading Islamic Jurisprudence...",
+        "continue": "Continue",
+        "back": "Back",
+        "check": "CHECK",
+        "true": "True",
+        "false": "False"
+    },
+    "onboarding": {
+        "title": "Welcome to Fiqh-lingo",
+        "subtitle": "Choose your level and daily time commitment",
+        "timeLabel": "Daily Time:",
+        "levelLabel": "Knowledge Level:",
+        "levelBeginner": "Beginner",
+        "levelIntermediate": "Intermediate",
+        "start": "Begin Journey"
+    },
+    "tabs": {
+        "learn": "Learn",
+        "review": "Review",
+        "profile": "Profile"
+    },
+    "home": {
+        "greeting": "As-salamu alaykum!",
+        "subGreeting": "Continue your journey.",
+        "curriculum": "Curriculum"
+    },
+    "review": {
+        "title": "Spaced Repetition",
+        "subtitle": "Review what you've learned to cement it into your long-term memory.",
+        "lessonsReady": "Lessons ready for review",
+        "startPractice": "Start Practice"
+    },
+    "profile": {
+        "username": "Student of Knowledge",
+        "statsTitle": "Your Statistics",
+        "streak": "Day Streak",
+        "xp": "Total XP",
+        "hearts": "Hearts"
+    },
+    "exercise": {
+        "questionLabel": "Translate or identify the concept:",
+        "gameOverTitle": "Game Over",
+        "gameOverDesc": "You ran out of hearts!",
+        "practiceLabel": "Practice"
+    }
+}

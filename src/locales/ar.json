@@ -1,0 +1,48 @@
+{
+    "common": {
+        "loading": "جاري تحميل الفقه الإسلامي...",
+        "continue": "متابعة",
+        "back": "رجوع",
+        "check": "تحقق",
+        "true": "صحيح",
+        "false": "خطأ"
+    },
+    "onboarding": {
+        "title": "أهلاً بك في فقه-لينجو",
+        "subtitle": "اختر مستواك والوقت الذي تخصصه يومياً",
+        "timeLabel": "الوقت اليومي:",
+        "levelLabel": "المستوى الفقهي:",
+        "levelBeginner": "مبتدئ",
+        "levelIntermediate": "متوسط",
+        "start": "ابدأ الرحلة"
+    },
+    "tabs": {
+        "learn": "التعلم",
+        "review": "المراجعة",
+        "profile": "الحساب"
+    },
+    "home": {
+        "greeting": "السلام عليكم!",
+        "subGreeting": "أكمل رحلتك في طلب العلم.",
+        "curriculum": "المنهج الدراسي"
+    },
+    "review": {
+        "title": "المراجعة المتباعدة",
+        "subtitle": "راجع ما تعلمته لتثبيته في الذاكرة طويلة الأمد.",
+        "lessonsReady": "دروس جاهزة للمراجعة",
+        "startPractice": "ابدأ المراجعة الآن"
+    },
+    "profile": {
+        "username": "طالب علم",
+        "statsTitle": "إحصائياتك",
+        "streak": "أيام متتالية",
+        "xp": "مجموع النقاط",
+        "hearts": "القلوب"
+    },
+    "exercise": {
+        "questionLabel": "ترجم أو تعرف على المفهوم:",
+        "gameOverTitle": "انتهت المحاولة",
+        "gameOverDesc": "لقد نفدت قلوبك!",
+        "practiceLabel": "تدريب"
+    }
+}
