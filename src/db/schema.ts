@@ -1,67 +1,57 @@
-export const schemaQueries = `
-PRAGMA foreign_keys = ON;
+import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 
-CREATE TABLE IF NOT EXISTS units (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  title TEXT NOT NULL,
-  description TEXT,
-  order_index INTEGER NOT NULL
-);
+export const profiles = sqliteTable('profiles', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  totalXp: integer('total_xp').default(0),
+  streakCount: integer('streak_count').default(0),
+  hearts: integer('hearts').default(5),
+  hasOnboarded: integer('has_onboarded').default(0), // 0 or 1
+  knowledgeLevel: text('knowledge_level'),
+  timeCommitment: integer('time_commitment'),
+  lastActiveAt: text('last_active_at')
+});
 
-CREATE TABLE IF NOT EXISTS nodes (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  unit_id INTEGER NOT NULL,
-  title TEXT NOT NULL,
-  order_index INTEGER NOT NULL,
-  FOREIGN KEY (unit_id) REFERENCES units(id)
-);
+export const units = sqliteTable('units', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  title: text('title').notNull(),
+  description: text('description'),
+  orderIndex: integer('order_index').notNull()
+});
 
-CREATE TABLE IF NOT EXISTS levels (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  node_id INTEGER NOT NULL,
-  title TEXT NOT NULL,
-  order_index INTEGER NOT NULL,
-  FOREIGN KEY (node_id) REFERENCES nodes(id)
-);
+export const nodes = sqliteTable('nodes', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  unitId: integer('unit_id').notNull().references(() => units.id),
+  title: text('title').notNull(),
+  orderIndex: integer('order_index').notNull()
+});
 
-CREATE TABLE IF NOT EXISTS exercises (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  level_id INTEGER NOT NULL,
-  type TEXT NOT NULL,
-  content_json TEXT NOT NULL,
-  correct_answer TEXT NOT NULL,
-  FOREIGN KEY (level_id) REFERENCES levels(id)
-);
+export const levels = sqliteTable('levels', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  nodeId: integer('node_id').notNull().references(() => nodes.id),
+  title: text('title').notNull(),
+  orderIndex: integer('order_index').notNull()
+});
 
-CREATE TABLE IF NOT EXISTS profiles (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  total_xp INTEGER DEFAULT 0,
-  streak_count INTEGER DEFAULT 0,
-  hearts INTEGER DEFAULT 5,
-  has_onboarded INTEGER DEFAULT 0,
-  knowledge_level TEXT,
-  time_commitment INTEGER,
-  last_active_at TEXT
-);
+export const exercises = sqliteTable('exercises', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  levelId: integer('level_id').notNull().references(() => levels.id),
+  type: text('type').notNull(),
+  contentJson: text('content_json').notNull(),
+  correctAnswer: text('correct_answer').notNull()
+});
 
-CREATE TABLE IF NOT EXISTS user_progress (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  level_id INTEGER UNIQUE NOT NULL,
-  is_completed INTEGER DEFAULT 0,
-  high_score INTEGER DEFAULT 0,
-  FOREIGN KEY (level_id) REFERENCES levels(id)
-);
+export const userProgress = sqliteTable('user_progress', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  levelId: integer('level_id').unique().notNull().references(() => levels.id),
+  isCompleted: integer('is_completed').default(0),
+  highScore: integer('high_score').default(0)
+});
 
--- SM-2 Spaced Repetition System Tracking Table
-CREATE TABLE IF NOT EXISTS srs_reviews (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  exercise_id INTEGER UNIQUE NOT NULL,
-  ease_factor REAL DEFAULT 2.5,
-  interval INTEGER DEFAULT 0,
-  repetitions INTEGER DEFAULT 0,
-  next_review_date TEXT,
-  FOREIGN KEY(exercise_id) REFERENCES exercises(id)
-);
-`;
-
-
+export const srsReviews = sqliteTable('srs_reviews', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  exerciseId: integer('exercise_id').unique().notNull().references(() => exercises.id),
+  easeFactor: real('ease_factor').default(2.5),
+  interval: integer('interval').default(0),
+  repetitions: integer('repetitions').default(0),
+  nextReviewDate: text('next_review_date')
+});

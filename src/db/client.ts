@@ -1,11 +1,13 @@
 import * as SQLite from 'expo-sqlite';
-import { schemaQueries } from './schema';
+import { drizzle } from 'drizzle-orm/expo-sqlite';
+import * as schema from './schema';
 import seedData from './seed.json';
 
 export const DATABASE_NAME = 'fiqh_lingo.db';
 
 export async function initDatabase(db: SQLite.SQLiteDatabase) {
     try {
+        const drizzleDb = drizzle(db, { schema });
         // Check if tables already exist (simple check)
         const result = await db.getFirstAsync<{ count: number }>(
             "SELECT count(*) as count FROM sqlite_master WHERE type='table' AND name='units';"
@@ -13,31 +15,76 @@ export async function initDatabase(db: SQLite.SQLiteDatabase) {
 
         if (result && result.count === 0) {
             console.log("Initializing database schema...");
-            await db.execAsync(schemaQueries);
-            console.log("Seeding database from JSON...");
+
+            // Raw creation is standard for Expo SQLite MVP
+            await db.execAsync(`
+              PRAGMA foreign_keys = ON;
+              CREATE TABLE IF NOT EXISTS units (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, description TEXT, order_index INTEGER NOT NULL);
+              CREATE TABLE IF NOT EXISTS nodes (id INTEGER PRIMARY KEY AUTOINCREMENT, unit_id INTEGER NOT NULL REFERENCES units(id), title TEXT NOT NULL, order_index INTEGER NOT NULL);
+              CREATE TABLE IF NOT EXISTS levels (id INTEGER PRIMARY KEY AUTOINCREMENT, node_id INTEGER NOT NULL REFERENCES nodes(id), title TEXT NOT NULL, order_index INTEGER NOT NULL);
+              CREATE TABLE IF NOT EXISTS exercises (id INTEGER PRIMARY KEY AUTOINCREMENT, level_id INTEGER NOT NULL REFERENCES levels(id), type TEXT NOT NULL, content_json TEXT NOT NULL, correct_answer TEXT NOT NULL);
+              CREATE TABLE IF NOT EXISTS profiles (id INTEGER PRIMARY KEY AUTOINCREMENT, total_xp INTEGER DEFAULT 0, streak_count INTEGER DEFAULT 0, hearts INTEGER DEFAULT 5, has_onboarded INTEGER DEFAULT 0, knowledge_level TEXT, time_commitment INTEGER, last_active_at TEXT);
+              CREATE TABLE IF NOT EXISTS user_progress (id INTEGER PRIMARY KEY AUTOINCREMENT, level_id INTEGER UNIQUE NOT NULL REFERENCES levels(id), is_completed INTEGER DEFAULT 0, high_score INTEGER DEFAULT 0);
+              CREATE TABLE IF NOT EXISTS srs_reviews (id INTEGER PRIMARY KEY AUTOINCREMENT, exercise_id INTEGER UNIQUE NOT NULL REFERENCES exercises(id), ease_factor REAL DEFAULT 2.5, interval INTEGER DEFAULT 0, repetitions INTEGER DEFAULT 0, next_review_date TEXT);
+            `);
+
+            console.log("Seeding database from JSON via Drizzle...");
 
             // Profiles
-            for (const p of seedData.profiles) {
-                await db.runAsync('INSERT OR IGNORE INTO profiles (id, total_xp, streak_count, hearts, has_onboarded, last_active_at) VALUES (?, ?, ?, ?, ?, ?)', [p.id, p.total_xp, p.streak_count, p.hearts, p.has_onboarded, p.last_active_at]);
+            if (seedData.profiles.length > 0) {
+                const mappedProfiles = seedData.profiles.map(p => ({
+                    id: p.id,
+                    totalXp: p.total_xp,
+                    streakCount: p.streak_count,
+                    hearts: p.hearts,
+                    hasOnboarded: p.has_onboarded,
+                    lastActiveAt: p.last_active_at
+                }));
+                await drizzleDb.insert(schema.profiles).values(mappedProfiles);
             }
             // Units
-            for (const u of seedData.units) {
-                await db.runAsync('INSERT OR IGNORE INTO units (id, title, description, order_index) VALUES (?, ?, ?, ?)', [u.id, u.title, u.description, u.order_index]);
+            if (seedData.units.length > 0) {
+                const mappedUnits = seedData.units.map(u => ({
+                    id: u.id,
+                    title: u.title,
+                    description: u.description,
+                    orderIndex: u.order_index
+                }));
+                await drizzleDb.insert(schema.units).values(mappedUnits);
             }
             // Nodes
-            for (const n of seedData.nodes) {
-                await db.runAsync('INSERT OR IGNORE INTO nodes (id, unit_id, title, order_index) VALUES (?, ?, ?, ?)', [n.id, n.unit_id, n.title, n.order_index]);
+            if (seedData.nodes.length > 0) {
+                const mappedNodes = seedData.nodes.map(n => ({
+                    id: n.id,
+                    unitId: n.unit_id,
+                    title: n.title,
+                    orderIndex: n.order_index
+                }));
+                await drizzleDb.insert(schema.nodes).values(mappedNodes);
             }
             // Levels
-            for (const l of seedData.levels) {
-                await db.runAsync('INSERT OR IGNORE INTO levels (id, node_id, title, order_index) VALUES (?, ?, ?, ?)', [l.id, l.node_id, l.title, l.order_index]);
+            if (seedData.levels.length > 0) {
+                const mappedLevels = seedData.levels.map(l => ({
+                    id: l.id,
+                    nodeId: l.node_id,
+                    title: l.title,
+                    orderIndex: l.order_index
+                }));
+                await drizzleDb.insert(schema.levels).values(mappedLevels);
             }
             // Exercises
-            for (const e of seedData.exercises) {
-                await db.runAsync('INSERT OR IGNORE INTO exercises (id, level_id, type, content_json, correct_answer) VALUES (?, ?, ?, ?, ?)', [e.id, e.level_id, e.type, JSON.stringify(e.content), e.correct_answer]);
+            if (seedData.exercises.length > 0) {
+                const mappedEx = seedData.exercises.map(e => ({
+                    id: e.id,
+                    levelId: e.level_id,
+                    type: e.type,
+                    contentJson: JSON.stringify(e.content),
+                    correctAnswer: e.correct_answer
+                }));
+                await drizzleDb.insert(schema.exercises).values(mappedEx);
             }
 
-            console.log("Database initialized and JSON seeded successfully.");
+            console.log("Database initialized and JSON seeded successfully via Drizzle ORM.");
         } else {
             console.log("Database already initialized.");
         }

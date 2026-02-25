@@ -1,6 +1,9 @@
 import { Middleware } from '@reduxjs/toolkit';
 import * as SQLite from 'expo-sqlite';
 import { DATABASE_NAME } from '../../db/client';
+import { drizzle } from 'drizzle-orm/expo-sqlite';
+import * as schema from '../../db/schema';
+import { eq } from 'drizzle-orm';
 
 export const dbMiddleware: Middleware = store => next => action => {
     // We capture state before it modifies for endSession to ensure we have the session context
@@ -10,18 +13,23 @@ export const dbMiddleware: Middleware = store => next => action => {
     if (act.type === 'session/endSession') {
         try {
             const db = SQLite.openDatabaseSync(DATABASE_NAME);
+            const drizzleDb = drizzle(db, { schema });
             const session = prevState.session;
 
             if (session.currentLevelId && session.currentLevelId !== -1) {
-                const existing = db.getFirstSync<{ id: number }>('SELECT id FROM user_progress WHERE level_id = ?', [session.currentLevelId]);
-                if (existing) {
-                    db.execSync(`UPDATE user_progress SET is_completed = 1 WHERE level_id = ${session.currentLevelId};`);
-                } else {
-                    db.execSync(`INSERT INTO user_progress (level_id, is_completed, high_score) VALUES (${session.currentLevelId}, 1, 0);`);
-                }
+                // Using runSync inside middleware is tricky with Drizzle's Promise-based API for react-native.
+                // However, Drizzle Expo-SQLite driver supports async correctly. We just use fire-and-forget promises.
+                drizzleDb.insert(schema.userProgress).values({
+                    levelId: session.currentLevelId,
+                    isCompleted: 1,
+                    highScore: 0
+                }).onConflictDoUpdate({
+                    target: schema.userProgress.levelId,
+                    set: { isCompleted: 1 }
+                }).catch(e => console.error("Failed to update level progress via Drizzle:", e));
             }
         } catch (e) {
-            console.error("Failed to update progress:", e);
+            console.error("Failed to setup drizzle for progress tracking:", e);
         }
     }
 
@@ -39,24 +47,21 @@ export const dbMiddleware: Middleware = store => next => action => {
     ) {
         try {
             const db = SQLite.openDatabaseSync(DATABASE_NAME);
+            const drizzleDb = drizzle(db, { schema });
             const user = state.user;
 
-            const onboardedVal = user.hasOnboarded ? 1 : 0;
-            const kl = user.knowledgeLevel ? "'" + user.knowledgeLevel + "'" : 'NULL';
-            const tc = user.timeCommitment ? user.timeCommitment : 'NULL';
-
-            // Update profiles
-            db.execAsync(`
-        UPDATE profiles SET 
-          total_xp = ${user.totalXP}, 
-          hearts = ${user.hearts},
-          streak_count = ${user.streakCount},
-          has_onboarded = ${onboardedVal},
-          knowledge_level = ${kl},
-          time_commitment = ${tc},
-          last_active_at = ${user.lastActiveAt ? "'" + user.lastActiveAt + "'" : 'NULL'}
-        WHERE id = 1;
-      `).catch(err => console.error("DB Update Error Profiles:", err));
+            drizzleDb.update(schema.profiles)
+                .set({
+                    totalXp: user.totalXP,
+                    hearts: user.hearts,
+                    streakCount: user.streakCount,
+                    hasOnboarded: user.hasOnboarded ? 1 : 0,
+                    knowledgeLevel: user.knowledgeLevel,
+                    timeCommitment: user.timeCommitment,
+                    lastActiveAt: user.lastActiveAt
+                })
+                .where(eq(schema.profiles.id, 1))
+                .catch(err => console.error("DB Update Error Profiles via Drizzle:", err));
 
         } catch (e) {
             console.error("Failed to open db synchronously:", e);

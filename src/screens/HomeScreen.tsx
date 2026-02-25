@@ -1,16 +1,17 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, I18nManager } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { useSQLiteContext } from 'expo-sqlite';
 import { theme } from '../theme';
 import { MoonIcon, PathIcon } from '../components/CustomIcons';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../store';
-import { setUserStats } from '../store/slices/userSlice';
+import { RootState, AppDispatch } from '../store';
+import { fetchHomeData } from '../store/slices/curriculumSlice';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { getTextAlign } from '../utils/styleUtils';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
 
@@ -34,67 +35,19 @@ interface Unit {
     completedUnitLevels: number;
 }
 
-const isRTL = I18nManager.isRTL;
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
-    const db = useSQLiteContext();
-    const dispatch = useDispatch();
+    const dispatch = useDispatch<AppDispatch>();
     const { t } = useTranslation();
-    const [units, setUnits] = useState<Unit[]>([]);
+    const units = useSelector((state: RootState) => state.curriculum.units);
     const user = useSelector((state: RootState) => state.user);
     const [expandedUnit, setExpandedUnit] = useState<number | null>(null);
 
     useFocusEffect(
         useCallback(() => {
-            loadData();
-        }, [])
+            dispatch(fetchHomeData());
+        }, [dispatch])
     );
-
-    const loadData = async () => {
-        try {
-            const profile = await db.getFirstAsync<{
-                total_xp: number;
-                streak_count: number;
-                hearts: number;
-                last_active_at: string;
-                has_onboarded: number;
-                knowledge_level: string;
-                time_commitment: number;
-            }>('SELECT * FROM profiles WHERE id = 1');
-
-            if (profile) {
-                dispatch(setUserStats({
-                    totalXP: profile.total_xp,
-                    streakCount: profile.streak_count,
-                    hearts: profile.hearts,
-                    lastActiveAt: profile.last_active_at,
-                    hasOnboarded: profile.has_onboarded === 1,
-                    knowledgeLevel: profile.knowledge_level,
-                    timeCommitment: profile.time_commitment
-                }));
-            }
-
-            const loadedUnits = await db.getAllAsync<{ id: number; title: string; description: string }>('SELECT * FROM units ORDER BY order_index ASC');
-            const unitsWithNodes = await Promise.all(
-                loadedUnits.map(async (unit) => {
-                    const nodes = await db.getAllAsync<Node>(`
-                        SELECT n.id, n.title, 
-                          (SELECT count(*) FROM levels WHERE node_id = n.id) as total_levels,
-                          (SELECT count(*) FROM levels l JOIN user_progress up ON l.id = up.level_id WHERE up.is_completed = 1 AND l.node_id = n.id) as completed_levels
-                        FROM nodes n 
-                        WHERE n.unit_id = ? 
-                        ORDER BY n.order_index ASC
-                    `, [unit.id]);
-                    const totalUnitLevels = nodes.reduce((sum, n) => sum + n.total_levels, 0);
-                    const completedUnitLevels = nodes.reduce((sum, n) => sum + n.completed_levels, 0);
-                    return { ...unit, nodes, totalUnitLevels, completedUnitLevels };
-                })
-            );
-            setUnits(unitsWithNodes);
-        } catch (e) {
-            console.error(e);
-        }
-    };
 
     const toggleUnit = (unitId: number) => {
         setExpandedUnit(expandedUnit === unitId ? null : unitId);
@@ -108,12 +61,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <View style={styles.header}>
-                    <Text style={styles.greeting}>{t('home.greeting')}</Text>
-                    <Text style={styles.subGreeting}>{t('home.subGreeting')}</Text>
+                    <Text style={[styles.greeting, { textAlign: getTextAlign() }]}>{t('home.greeting')}</Text>
+                    <Text style={[styles.subGreeting, { textAlign: getTextAlign() }]}>{t('home.subGreeting')}</Text>
                 </View>
 
                 <View style={styles.categories}>
-                    <Text style={styles.sectionTitle}>{t('home.curriculum')}</Text>
+                    <Text style={[styles.sectionTitle, { textAlign: getTextAlign() }]}>{t('home.curriculum')}</Text>
                     {units.map((unit) => (
                         <View key={unit.id} style={styles.unitContainer}>
                             <TouchableOpacity
@@ -194,7 +147,7 @@ const styles = StyleSheet.create({
         ...theme.typography.h2,
         marginBottom: 15,
         color: theme.colors.textMain,
-        textAlign: isRTL ? 'right' : 'left',
+        textAlign: getTextAlign(),
     },
     unitContainer: {
         marginBottom: 16,
@@ -227,12 +180,12 @@ const styles = StyleSheet.create({
         ...theme.typography.h3,
         marginBottom: 4,
         color: theme.colors.textMain,
-        textAlign: isRTL ? 'right' : 'left',
+        textAlign: getTextAlign(),
     },
     cardDesc: {
         ...theme.typography.bodySmall,
         lineHeight: 20,
-        textAlign: isRTL ? 'right' : 'left',
+        textAlign: getTextAlign(),
     },
     nodesList: {
         backgroundColor: theme.colors.surface,
@@ -255,7 +208,7 @@ const styles = StyleSheet.create({
     nodeTitle: {
         ...theme.typography.h3,
         color: theme.colors.textMain,
-        textAlign: isRTL ? 'right' : 'left',
+        textAlign: getTextAlign(),
         flex: 1, // Take up remaining space so the chevron stays on the edge
         paddingHorizontal: 15,
     },

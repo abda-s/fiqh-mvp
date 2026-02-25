@@ -1,11 +1,14 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
-import { useSQLiteContext } from 'expo-sqlite';
+import React, { useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '../store';
+import { fetchPendingReviews } from '../store/slices/curriculumSlice';
 
 type ReviewScreenNavProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
 
@@ -14,28 +17,15 @@ interface ReviewScreenProps {
 }
 
 export default function ReviewScreen({ navigation }: ReviewScreenProps) {
-    const db = useSQLiteContext();
     const { t } = useTranslation();
-    const [completedCount, setCompletedCount] = useState(0);
+    const dispatch = useDispatch<AppDispatch>();
+    const completedCount = useSelector((state: RootState) => state.curriculum.pendingReviewCount);
 
     useFocusEffect(
         useCallback(() => {
-            loadReviewData();
-        }, [])
+            dispatch(fetchPendingReviews());
+        }, [dispatch])
     );
-
-    const loadReviewData = async () => {
-        try {
-            // Find exercises due for review today or earlier
-            const pending = await db.getAllAsync<{ id: number }>(`
-                SELECT exercise_id as id FROM srs_reviews 
-                WHERE next_review_date <= date('now', 'localtime')
-            `);
-            setCompletedCount(pending.length);
-        } catch (e) {
-            console.error(e);
-        }
-    };
 
     const handleStartReview = () => {
         if (completedCount === 0) {

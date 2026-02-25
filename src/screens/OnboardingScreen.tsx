@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, I18nManager, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch } from 'react-redux';
 import { completeOnboarding } from '../store/slices/userSlice';
 import { theme } from '../theme';
 import { useTranslation } from 'react-i18next';
-import { deleteDatabaseAsync, useSQLiteContext } from 'expo-sqlite';
-import { DATABASE_NAME } from '../db/client';
+import { useSQLiteContext } from 'expo-sqlite';
+import { getTextAlign } from '../utils/styleUtils';
+import { resetDatabase } from '../utils/devUtils';
 
-const isRTL = I18nManager.isRTL;
 
 export default function OnboardingScreen() {
     const dispatch = useDispatch();
@@ -75,15 +76,7 @@ export default function OnboardingScreen() {
             {__DEV__ && (
                 <TouchableOpacity
                     style={styles.devResetButton}
-                    onPress={async () => {
-                        try {
-                            await db.closeAsync();
-                            await deleteDatabaseAsync(DATABASE_NAME);
-                            Alert.alert('Database Deleted', 'Please restart the app completely to re-initialize the database schema and seeds.');
-                        } catch (e) {
-                            Alert.alert('Error', 'Failed to delete database: ' + String(e));
-                        }
-                    }}
+                    onPress={() => resetDatabase(db)}
                 >
                     <Text style={styles.devResetText}>[DEV] Delete Database</Text>
                 </TouchableOpacity>
@@ -122,7 +115,7 @@ const styles = StyleSheet.create({
         ...theme.typography.h3,
         marginBottom: 15,
         color: theme.colors.textMain,
-        textAlign: isRTL ? 'right' : 'left', // Dynamically sets alignment based on actual UI thread language
+        textAlign: getTextAlign(), // Dynamically sets alignment based on actual UI thread language
     },
     optionCard: {
         backgroundColor: theme.colors.surface,

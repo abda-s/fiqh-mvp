@@ -12,7 +12,18 @@ export interface SRSData {
     interval: number;
     repetitions: number;
     nextReviewDate: string;
+    isRepeatAgain: boolean;
 }
+
+export function getLocalYYYYMMDD(date: Date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+// @ts-ignore
+import supermemo2 from 'supermemo2';
 
 export function calculateSM2(
     quality: number,
@@ -20,42 +31,31 @@ export function calculateSM2(
     easeFactor: number,
     interval: number
 ): SRSData {
-    let newRepetitions = repetitions;
-    let newInterval = interval;
-    let newEaseFactor = easeFactor;
+    // interval = 0 means first time seeing the card, supermemo2 expects null for first schedule
+    const lastSchedule = interval === 0 ? null : interval;
 
-    // Grade >= 3 means correct response
+    // Execute supermemo2 algorithm
+    const result = supermemo2(quality, lastSchedule, easeFactor);
+
+    let newRepetitions = repetitions;
     if (quality >= 3) {
-        if (repetitions === 0) {
-            newInterval = 1; // 1 day
-        } else if (repetitions === 1) {
-            newInterval = 6; // 6 days
-        } else {
-            newInterval = Math.round(interval * easeFactor);
-        }
         newRepetitions++;
     } else {
-        // Incorrect response resets repetitions
         newRepetitions = 0;
-        newInterval = 1;
     }
 
-    // Update Ease Factor
-    newEaseFactor = easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
-
-    // The ease factor should not fall below 1.3
-    if (newEaseFactor < 1.3) {
-        newEaseFactor = 1.3;
-    }
+    // supermemo2 result.schedule is 1 when quality is < 3 or lastSchedule is null
+    const newInterval = result.schedule;
 
     // Calculate Next Review Date based on new interval
     const nextReviewDate = new Date();
     nextReviewDate.setDate(nextReviewDate.getDate() + newInterval);
 
     return {
-        easeFactor: newEaseFactor,
+        easeFactor: result.factor,
         interval: newInterval,
         repetitions: newRepetitions,
-        nextReviewDate: nextReviewDate.toISOString().split('T')[0], // YYYY-MM-DD
+        nextReviewDate: getLocalYYYYMMDD(nextReviewDate),
+        isRepeatAgain: result.isRepeatAgain
     };
 }

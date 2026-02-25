@@ -1,117 +1,69 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, I18nManager } from 'react-native';
-import { useSQLiteContext } from 'expo-sqlite';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../store';
-import { startSession, nextExercise, recordCorrectAnswer, endSession, resetSession, Exercise } from '../store/slices/sessionSlice';
+import { RootState, AppDispatch } from '../store';
+import { nextExercise, recordCorrectAnswer, endSession, resetSession, Exercise, fetchExercisesThunk, submitAnswerThunk } from '../store/slices/sessionSlice';
 import { deductHeart, addXP } from '../store/slices/userSlice';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
-import * as Haptics from 'expo-haptics';
-import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle } from 'react-native-reanimated';
+import { playSuccessHaptic, playErrorHaptic } from '../utils/haptics';
+import { triggerShakeAnimation } from '../utils/animations';
+import { getTextAlign } from '../utils/styleUtils';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { HeartIcon } from '../components/CustomIcons';
 import { useTranslation } from 'react-i18next';
-import { calculateSM2 } from '../utils/sm2';
 
 type ExerciseScreenProps = NativeStackScreenProps<RootStackParamList, 'Exercise'>;
 
-const isRTL = I18nManager.isRTL;
 
 export default function ExerciseScreen({ route, navigation }: ExerciseScreenProps) {
     const { levelId, isPractice } = route.params;
-    const db = useSQLiteContext();
-    const dispatch = useDispatch();
+    const dispatch = useDispatch<AppDispatch>();
 
-    const { isActive, exercises, currentExerciseIndex } = useSelector((state: RootState) => state.session);
+    const { isActive, exercises, currentExerciseIndex, loadingExercises } = useSelector((state: RootState) => state.session);
     const hearts = useSelector((state: RootState) => state.user.hearts);
     const { t } = useTranslation();
 
-    const [loading, setLoading] = useState(true);
     const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+    const [isAnswerRevealed, setIsAnswerRevealed] = useState(false);
 
     const shakeAnimation = useSharedValue(0);
 
     useEffect(() => {
-        loadExercises();
+        const load = async () => {
+            const resultAction = await dispatch(fetchExercisesThunk({ levelId, isPractice: !!isPractice }));
+            if (fetchExercisesThunk.fulfilled.match(resultAction)) {
+                if (resultAction.payload.exercises.length === 0 && isPractice) {
+                    Alert.alert(t('review.lessonsReady'), "0", [{ text: t('common.back'), onPress: () => navigation.goBack() }]);
+                }
+            }
+        };
+        load();
+
         return () => {
             dispatch(resetSession());
         };
-    }, [levelId]);
-
-    const loadExercises = async () => {
-        try {
-            let data: Exercise[] = [];
-
-            if (isPractice) {
-                // Fetch up to 10 pending SRS exercises
-                data = await db.getAllAsync<Exercise>(`
-                    SELECT e.* FROM exercises e
-                    JOIN srs_reviews s ON e.id = s.exercise_id
-                    WHERE s.next_review_date <= date('now', 'localtime')
-                    ORDER BY s.next_review_date ASC
-                    LIMIT 10
-                `);
-            } else {
-                data = await db.getAllAsync<Exercise>(`SELECT * FROM exercises WHERE level_id = ?`, [levelId]);
-            }
-
-            if (data.length === 0) {
-                setLoading(false);
-                if (isPractice) {
-                    Alert.alert(t('review.lessonsReady'), "0", [{ text: t('common.back'), onPress: () => navigation.goBack() }]);
-                }
-                return;
-            }
-
-            dispatch(startSession({ levelId, exercises: data }));
-            setLoading(false);
-        } catch (e) {
-            console.error('Failed to load exercises:', e);
-            setLoading(false);
-        }
-    };
+    }, [levelId, isPractice, dispatch]);
 
     const currentExercise = exercises[currentExerciseIndex];
 
     const handleAnswerSubmit = async (answer: string) => {
-        if (!currentExercise) return;
+        if (!currentExercise || isAnswerRevealed) return;
         setSelectedAnswer(answer);
 
         const isCorrect = answer === currentExercise.correct_answer;
-        const quality = isCorrect ? 5 : 1;
-
-        // Update SRS
-        try {
-            const existingReview = await db.getFirstAsync<{
-                ease_factor: number;
-                interval: number;
-                repetitions: number;
-            }>('SELECT ease_factor, interval, repetitions FROM srs_reviews WHERE exercise_id = ?', [currentExercise.id]);
-
-            const ef = existingReview ? existingReview.ease_factor : 2.5;
-            const iv = existingReview ? existingReview.interval : 0;
-            const rep = existingReview ? existingReview.repetitions : 0;
-
-            const nextData = calculateSM2(quality, rep, ef, iv);
-
-            await db.runAsync(`
-               INSERT INTO srs_reviews (exercise_id, ease_factor, interval, repetitions, next_review_date)
-               VALUES (?, ?, ?, ?, ?)
-               ON CONFLICT(exercise_id) DO UPDATE SET
-                 ease_factor = excluded.ease_factor,
-                 interval = excluded.interval,
-                 repetitions = excluded.repetitions,
-                 next_review_date = excluded.next_review_date
-            `, [currentExercise.id, nextData.easeFactor, nextData.interval, nextData.repetitions, nextData.nextReviewDate]);
-
-        } catch (e) {
-            console.error("Failed to update SRS data:", e);
-        }
 
         if (isCorrect) {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            playSuccessHaptic();
+
+            // First try correct
+            let quality = 5;
+
+            // Update SRS
+            dispatch(submitAnswerThunk({ exerciseId: currentExercise.id, quality, isPractice: !!isPractice }));
             dispatch(recordCorrectAnswer(10)); // Reward 10 XP per question
             dispatch(addXP(10)); // Update global user stats immediately (MVP scope)
 
@@ -119,14 +71,15 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
                 proceedToNext();
             }, 1000);
         } else {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            shakeAnimation.value = withSequence(
-                withTiming(-10, { duration: 50 }),
-                withTiming(10, { duration: 50 }),
-                withTiming(-10, { duration: 50 }),
-                withTiming(10, { duration: 50 }),
-                withTiming(0, { duration: 50 })
-            );
+            playErrorHaptic();
+            triggerShakeAnimation(shakeAnimation);
+
+            // Immediately reveal the incorrect state 
+            setIsAnswerRevealed(true);
+
+            // Dispatch failed answer so supermemo2 can flag isRepeatAgain
+            dispatch(submitAnswerThunk({ exerciseId: currentExercise.id, quality: 1, isPractice: !!isPractice }));
+
             if (!isPractice) {
                 dispatch(deductHeart());
 
@@ -139,15 +92,12 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
                     return;
                 }
             }
-
-            setTimeout(() => {
-                setSelectedAnswer(null);
-            }, 1000);
         }
     };
 
     const proceedToNext = () => {
         setSelectedAnswer(null);
+        setIsAnswerRevealed(false);
         if (currentExerciseIndex < exercises.length - 1) {
             dispatch(nextExercise());
         } else {
@@ -156,7 +106,17 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
             const title = isPractice ? t('review.title') : t('common.continue');
             const message = isPractice ? "Review Complete!" : "You finished all exercises in this level.";
             Alert.alert(title, message, [
-                { text: "Awesome", onPress: () => navigation.goBack() }
+                {
+                    text: "Awesome",
+                    onPress: () => {
+                        if (navigation.canGoBack()) {
+                            navigation.goBack();
+                        } else {
+                            // @ts-ignore - Route params definition might be strict, fallback gracefully
+                            navigation.replace('MainTabs');
+                        }
+                    }
+                }
             ]);
             // Persistence to user_progress handled cleanly by middleware.
         }
@@ -168,7 +128,7 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
         };
     });
 
-    if (loading || !isActive) {
+    if (loadingExercises || !isActive) {
         return <View style={styles.container}><Text>Loading Exercises...</Text></View>;
     }
 
@@ -179,6 +139,11 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
     const content = JSON.parse(currentExercise.content_json);
 
     const getOptionStyle = (opt: string) => {
+        // Always highlight the correct answer in green if the answer is revealed
+        if (isAnswerRevealed && opt === currentExercise?.correct_answer) {
+            return [styles.optionButton, styles.correctOption];
+        }
+
         if (selectedAnswer !== opt) return styles.optionButton;
         if (selectedAnswer === currentExercise.correct_answer) {
             return [styles.optionButton, styles.correctOption];
@@ -192,12 +157,14 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
                 <View style={styles.optionsContainer}>
                     <TouchableOpacity
                         style={getOptionStyle('true')}
+                        disabled={isAnswerRevealed}
                         onPress={() => handleAnswerSubmit('true')}
                     >
                         <Text style={styles.optionText}>{t('common.true')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={getOptionStyle('false')}
+                        disabled={isAnswerRevealed}
                         onPress={() => handleAnswerSubmit('false')}
                     >
                         <Text style={styles.optionText}>{t('common.false')}</Text>
@@ -213,6 +180,7 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
                         <TouchableOpacity
                             key={idx}
                             style={getOptionStyle(opt)}
+                            disabled={isAnswerRevealed}
                             onPress={() => handleAnswerSubmit(opt)}
                         >
                             <Text style={styles.optionText}>{opt}</Text>
@@ -226,7 +194,7 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
         return (
             <View style={styles.optionsContainer}>
                 <Text style={styles.comingSoon}>This exercise type ({currentExercise.type}) is under construction for MVP.</Text>
-                <TouchableOpacity style={styles.optionButton} onPress={() => handleAnswerSubmit(currentExercise.correct_answer)}>
+                <TouchableOpacity style={styles.optionButton} disabled={isAnswerRevealed} onPress={() => handleAnswerSubmit(currentExercise.correct_answer)}>
                     <Text style={styles.optionText}>Skip / Auto-Correct</Text>
                 </TouchableOpacity>
             </View>
@@ -262,14 +230,24 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
             {renderOptions()}
 
             <View style={styles.bottomBar}>
-                <TouchableOpacity
-                    style={[styles.checkButton, !selectedAnswer && styles.checkButtonDisabled]}
-                    disabled={!selectedAnswer}
-                    activeOpacity={0.8}
-                    onPress={() => selectedAnswer && handleAnswerSubmit(selectedAnswer)}
-                >
-                    <Text style={styles.checkButtonText}>{t('common.check')}</Text>
-                </TouchableOpacity>
+                {isAnswerRevealed ? (
+                    <TouchableOpacity
+                        style={[styles.checkButton, { backgroundColor: theme.colors.danger }]}
+                        activeOpacity={0.8}
+                        onPress={proceedToNext}
+                    >
+                        <Text style={styles.checkButtonText}>{t('common.continue')}</Text>
+                    </TouchableOpacity>
+                ) : (
+                    <TouchableOpacity
+                        style={[styles.checkButton, !selectedAnswer && styles.checkButtonDisabled]}
+                        disabled={!selectedAnswer}
+                        activeOpacity={0.8}
+                        onPress={() => selectedAnswer && handleAnswerSubmit(selectedAnswer)}
+                    >
+                        <Text style={styles.checkButtonText}>{t('common.check')}</Text>
+                    </TouchableOpacity>
+                )}
             </View>
         </SafeAreaView>
     );
@@ -322,13 +300,13 @@ const styles = StyleSheet.create({
         ...theme.typography.h3,
         color: theme.colors.textMuted,
         marginBottom: 10,
-        textAlign: isRTL ? 'right' : 'left',
+        textAlign: getTextAlign(),
     },
     questionText: {
         ...theme.typography.h1,
         color: theme.colors.textMain,
         lineHeight: 36,
-        textAlign: isRTL ? 'right' : 'left',
+        textAlign: getTextAlign(),
     },
     optionsContainer: {
         flex: 1.5,

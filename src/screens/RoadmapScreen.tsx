@@ -1,14 +1,15 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Dimensions, I18nManager } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, I18nManager } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { useSQLiteContext } from 'expo-sqlite';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { theme } from '../theme';
 import Svg, { Path } from 'react-native-svg';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useSelector } from 'react-redux';
-import { RootState } from '../store';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState, AppDispatch } from '../store';
+import { fetchRoadmapLevels } from '../store/slices/curriculumSlice';
 import { useTranslation } from 'react-i18next';
 
 type RoadmapScreenProps = NativeStackScreenProps<RootStackParamList, 'Roadmap'>;
@@ -28,31 +29,16 @@ const NODE_RADIUS = 35; // Size of the circular button
 
 export default function RoadmapScreen({ route, navigation }: RoadmapScreenProps) {
     const { nodeId, title } = route.params;
-    const db = useSQLiteContext();
+    const dispatch = useDispatch<AppDispatch>();
     const { t } = useTranslation();
-    const [levels, setLevels] = useState<Level[]>([]);
+    const levels = useSelector((state: RootState) => state.curriculum.roadmapLevels);
     const userHearts = useSelector((state: RootState) => state.user.hearts);
 
     useFocusEffect(
         useCallback(() => {
-            loadLevels();
-        }, [nodeId])
+            dispatch(fetchRoadmapLevels(nodeId));
+        }, [nodeId, dispatch])
     );
-
-    const loadLevels = async () => {
-        try {
-            const data = await db.getAllAsync<Level>(`
-                SELECT l.*, IFNULL(up.is_completed, 0) as is_completed
-                FROM levels l
-                LEFT JOIN user_progress up ON l.id = up.level_id
-                WHERE l.node_id = ? 
-                ORDER BY l.order_index ASC
-            `, [nodeId]);
-            setLevels(data);
-        } catch (e) {
-            console.error(e);
-        }
-    };
 
     const handleLevelPress = (levelId: number) => {
         if (userHearts <= 0) {
