@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -12,7 +12,7 @@ import { loadCurriculumOverview } from '../store/slices/curriculumSlice';
 import { loadUserProfile } from '../store/slices/userSlice';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { getTextAlign } from '../utils/styleUtils';
+import { AppText } from '../components/AppText';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
 
@@ -63,12 +63,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <View style={styles.header}>
-                    <Text style={[styles.greeting, { textAlign: getTextAlign() }]}>{t('home.greeting')}</Text>
-                    <Text style={[styles.subGreeting, { textAlign: getTextAlign() }]}>{t('home.subGreeting')}</Text>
+                    <AppText style={styles.greeting} variant="h1">{t('home.greeting')}</AppText>
+                    <AppText style={styles.subGreeting} variant="body">{t('home.subGreeting')}</AppText>
                 </View>
 
                 <View style={styles.categories}>
-                    <Text style={[styles.sectionTitle, { textAlign: getTextAlign() }]}>{t('home.curriculum')}</Text>
+                    <AppText style={styles.sectionTitle} variant="h2">{t('home.curriculum')}</AppText>
                     {units.map((unit) => (
                         <View key={unit.id} style={styles.unitContainer}>
                             <TouchableOpacity
@@ -80,8 +80,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                                     <MoonIcon size={32} color={theme.colors.primary} />
                                 </View>
                                 <View style={styles.cardContent}>
-                                    <Text style={styles.cardTitle}>{unit.title}</Text>
-                                    <Text style={styles.cardDesc}>{unit.description}</Text>
+                                    <AppText style={styles.cardTitle} variant="h3">{unit.title}</AppText>
+                                    <AppText style={styles.cardDesc} variant="bodySmall">{unit.description}</AppText>
                                     {unit.totalUnitLevels > 0 && (
                                         <View style={styles.unitProgressContainer}>
                                             <View style={[styles.unitProgressBar, { width: `${(unit.completedUnitLevels / unit.totalUnitLevels) * 100}%` }]} />
@@ -104,7 +104,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                                             onPress={() => handleNodePress(node.id, node.title)}
                                         >
                                             <PathIcon size={20} color={theme.colors.secondary} />
-                                            <Text style={styles.nodeTitle}>{node.title}</Text>
+                                            <AppText style={styles.nodeTitle} variant="h3">{node.title}</AppText>
                                             {node.total_levels > 0 && node.completed_levels === node.total_levels ? (
                                                 <MaterialCommunityIcons name="check-circle" size={24} color={theme.colors.success} style={{ marginLeft: 'auto' }} />
                                             ) : (
@@ -135,21 +135,17 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
     greeting: {
-        ...theme.typography.h1,
         color: theme.colors.primary,
     },
     subGreeting: {
-        ...theme.typography.body,
         marginTop: 5,
     },
     categories: {
         flex: 1,
     },
     sectionTitle: {
-        ...theme.typography.h2,
         marginBottom: 15,
         color: theme.colors.textMain,
-        textAlign: getTextAlign(),
     },
     unitContainer: {
         marginBottom: 16,
@@ -179,15 +175,11 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     cardTitle: {
-        ...theme.typography.h3,
         marginBottom: 4,
         color: theme.colors.textMain,
-        textAlign: getTextAlign(),
     },
     cardDesc: {
-        ...theme.typography.bodySmall,
         lineHeight: 20,
-        textAlign: getTextAlign(),
     },
     nodesList: {
         backgroundColor: theme.colors.surface,
@@ -208,9 +200,7 @@ const styles = StyleSheet.create({
         borderBottomColor: theme.colors.background,
     },
     nodeTitle: {
-        ...theme.typography.h3,
         color: theme.colors.textMain,
-        textAlign: getTextAlign(),
         flex: 1, // Take up remaining space so the chevron stays on the edge
         paddingHorizontal: 15,
     },

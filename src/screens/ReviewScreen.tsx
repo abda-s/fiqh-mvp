@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../theme';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store';
 import { loadPendingReviews } from '../store/slices/curriculumSlice';
+import { AppText } from '../components/AppText';
 
 type ReviewScreenNavProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
 
@@ -40,13 +41,13 @@ export default function ReviewScreen({ navigation }: ReviewScreenProps) {
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.scroll}>
                 <View style={styles.header}>
-                    <Text style={styles.title}>{t('review.title')}</Text>
-                    <Text style={styles.subtitle}>{t('review.subtitle')}</Text>
+                    <AppText style={styles.title} variant="h1">{t('review.title')}</AppText>
+                    <AppText style={styles.subtitle} variant="body">{t('review.subtitle')}</AppText>
                 </View>
 
                 <View style={styles.statsCard}>
-                    <Text style={styles.statsNumber}>{completedCount}</Text>
-                    <Text style={styles.statsText}>{t('review.lessonsReady')}</Text>
+                    <AppText style={styles.statsNumber}>{completedCount}</AppText>
+                    <AppText style={styles.statsText} variant="body">{t('review.lessonsReady')}</AppText>
                 </View>
 
                 <TouchableOpacity
@@ -55,7 +56,7 @@ export default function ReviewScreen({ navigation }: ReviewScreenProps) {
                     disabled={completedCount === 0}
                     onPress={handleStartReview}
                 >
-                    <Text style={styles.reviewButtonText}>{t('review.startPractice')}</Text>
+                    <AppText style={styles.reviewButtonText} variant="h3">{t('review.startPractice')}</AppText>
                 </TouchableOpacity>
             </ScrollView>
         </SafeAreaView>
@@ -76,12 +77,10 @@ const styles = StyleSheet.create({
         marginVertical: 40,
     },
     title: {
-        ...theme.typography.h1,
         color: theme.colors.primary,
         marginBottom: 10,
     },
     subtitle: {
-        ...theme.typography.body,
         textAlign: 'center',
         paddingHorizontal: 20,
         lineHeight: 24,
@@ -103,7 +102,6 @@ const styles = StyleSheet.create({
         color: theme.colors.secondary,
     },
     statsText: {
-        ...theme.typography.body,
         marginTop: 5,
     },
     reviewButton: {
@@ -115,7 +113,6 @@ const styles = StyleSheet.create({
         ...theme.shadows.md,
     },
     reviewButtonText: {
-        ...theme.typography.h3,
         color: theme.colors.surface,
     }
 });

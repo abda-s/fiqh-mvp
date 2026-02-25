@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, I18nManager } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView, Dimensions, I18nManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -11,6 +11,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
 import { loadRoadmapLevels } from '../store/slices/curriculumSlice';
 import { useTranslation } from 'react-i18next';
+import { AppText } from '../components/AppText';
 
 type RoadmapScreenProps = NativeStackScreenProps<RootStackParamList, 'Roadmap'>;
 
@@ -89,7 +90,7 @@ export default function RoadmapScreen({ route, navigation }: RoadmapScreenProps)
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <MaterialCommunityIcons name="arrow-left" size={28} color={theme.colors.textMain} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>{title}</Text>
+                <AppText style={styles.headerTitle} variant="h2">{title}</AppText>
                 <View style={{ width: 28 }} />
             </View>
 
@@ -134,7 +135,7 @@ export default function RoadmapScreen({ route, navigation }: RoadmapScreenProps)
                                 <MaterialCommunityIcons name={isCompleted ? "check" : "star"} size={32} color={isDisabled ? '#9CA3AF' : theme.colors.surface} />
                             </TouchableOpacity>
                             <View style={styles.tooltip}>
-                                <Text style={styles.tooltipText}>{level.title}</Text>
+                                <AppText style={styles.tooltipText} variant="bodySmall">{level.title}</AppText>
                             </View>
                         </View>
                     );
@@ -162,9 +163,7 @@ const styles = StyleSheet.create({
     backButton: {
         padding: 5,
     },
-    headerTitle: {
-        ...theme.typography.h2,
-    },
+    headerTitle: {},
     nodeWrapper: {
         position: 'absolute',
         alignItems: 'center',
@@ -199,7 +198,6 @@ const styles = StyleSheet.create({
         borderColor: theme.colors.border,
     },
     tooltipText: {
-        ...theme.typography.bodySmall,
         fontWeight: '600',
         color: theme.colors.textMain,
         textAlign: 'center',

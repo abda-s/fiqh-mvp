@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
@@ -10,11 +10,11 @@ import type { RootStackParamList } from '../navigation/AppNavigator';
 import Animated, { useSharedValue, useAnimatedStyle } from 'react-native-reanimated';
 import { playSuccessHaptic, playErrorHaptic } from '../utils/haptics';
 import { triggerShakeAnimation } from '../utils/animations';
-import { getTextAlign } from '../utils/styleUtils';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { HeartIcon } from '../components/CustomIcons';
 import { useTranslation } from 'react-i18next';
+import { AppText } from '../components/AppText';
 
 type ExerciseScreenProps = NativeStackScreenProps<RootStackParamList, 'Exercise'>;
 
@@ -129,11 +129,11 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
     });
 
     if (loadingExercises || !isActive) {
-        return <View style={styles.container}><Text>Loading Exercises...</Text></View>;
+        return <View style={styles.container}><AppText>Loading Exercises...</AppText></View>;
     }
 
     if (!currentExercise) {
-        return <View style={styles.container}><Text>No exercises found for this level.</Text></View>;
+        return <View style={styles.container}><AppText>No exercises found for this level.</AppText></View>;
     }
 
     const content = JSON.parse(currentExercise.content_json);
@@ -160,14 +160,14 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
                         disabled={isAnswerRevealed}
                         onPress={() => handleAnswerSubmit('true')}
                     >
-                        <Text style={styles.optionText}>{t('common.true')}</Text>
+                        <AppText style={styles.optionText} variant="h3">{t('common.true')}</AppText>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={getOptionStyle('false')}
                         disabled={isAnswerRevealed}
                         onPress={() => handleAnswerSubmit('false')}
                     >
-                        <Text style={styles.optionText}>{t('common.false')}</Text>
+                        <AppText style={styles.optionText} variant="h3">{t('common.false')}</AppText>
                     </TouchableOpacity>
                 </View>
             );
@@ -183,7 +183,7 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
                             disabled={isAnswerRevealed}
                             onPress={() => handleAnswerSubmit(opt)}
                         >
-                            <Text style={styles.optionText}>{opt}</Text>
+                            <AppText style={styles.optionText} variant="h3">{opt}</AppText>
                         </TouchableOpacity>
                     ))}
                 </View>
@@ -193,9 +193,9 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
         // fallback for 'ordering' types on MVP
         return (
             <View style={styles.optionsContainer}>
-                <Text style={styles.comingSoon}>This exercise type ({currentExercise.type}) is under construction for MVP.</Text>
+                <AppText style={styles.comingSoon} variant="bodySmall">This exercise type ({currentExercise.type}) is under construction for MVP.</AppText>
                 <TouchableOpacity style={styles.optionButton} disabled={isAnswerRevealed} onPress={() => handleAnswerSubmit(currentExercise.correct_answer)}>
-                    <Text style={styles.optionText}>Skip / Auto-Correct</Text>
+                    <AppText style={styles.optionText} variant="h3">Skip / Auto-Correct</AppText>
                 </TouchableOpacity>
             </View>
         );
@@ -212,19 +212,19 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
                 </View>
                 <View style={styles.heartBox}>
                     {isPractice ? (
-                        <Text style={styles.heartText}>{t('exercise.practiceLabel')}</Text>
+                        <AppText style={styles.heartText} variant="h3">{t('exercise.practiceLabel')}</AppText>
                     ) : (
                         <>
                             <HeartIcon size={24} color={theme.colors.danger} fill={theme.colors.danger} />
-                            <Text style={styles.heartText}>{hearts}</Text>
+                            <AppText style={styles.heartText} variant="h3">{hearts}</AppText>
                         </>
                     )}
                 </View>
             </View>
 
             <Animated.View style={[styles.questionArea, animatedStyle]}>
-                <Text style={styles.questionLabel}>{t('exercise.questionLabel')}</Text>
-                <Text style={styles.questionText}>{content.question}</Text>
+                <AppText style={styles.questionLabel} variant="h3">{t('exercise.questionLabel')}</AppText>
+                <AppText style={styles.questionText} variant="h1">{content.question}</AppText>
             </Animated.View>
 
             {renderOptions()}
@@ -236,7 +236,7 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
                         activeOpacity={0.8}
                         onPress={proceedToNext}
                     >
-                        <Text style={styles.checkButtonText}>{t('common.continue')}</Text>
+                        <AppText style={styles.checkButtonText} variant="h3">{t('common.continue')}</AppText>
                     </TouchableOpacity>
                 ) : (
                     <TouchableOpacity
@@ -245,7 +245,7 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
                         activeOpacity={0.8}
                         onPress={() => selectedAnswer && handleAnswerSubmit(selectedAnswer)}
                     >
-                        <Text style={styles.checkButtonText}>{t('common.check')}</Text>
+                        <AppText style={styles.checkButtonText} variant="h3">{t('common.check')}</AppText>
                     </TouchableOpacity>
                 )}
             </View>
@@ -288,7 +288,6 @@ const styles = StyleSheet.create({
         gap: 6,
     },
     heartText: {
-        ...theme.typography.h3,
         color: theme.colors.danger,
     },
     questionArea: {
@@ -297,16 +296,12 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     questionLabel: {
-        ...theme.typography.h3,
         color: theme.colors.textMuted,
         marginBottom: 10,
-        textAlign: getTextAlign(),
     },
     questionText: {
-        ...theme.typography.h1,
         color: theme.colors.textMain,
         lineHeight: 36,
-        textAlign: getTextAlign(),
     },
     optionsContainer: {
         flex: 1.5,
@@ -333,11 +328,9 @@ const styles = StyleSheet.create({
         borderColor: theme.colors.danger,
     },
     optionText: {
-        ...theme.typography.h3,
         color: theme.colors.textMain,
     },
     comingSoon: {
-        ...theme.typography.bodySmall,
         textAlign: 'center',
         marginBottom: 20,
     },
@@ -358,7 +351,6 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.border,
     },
     checkButtonText: {
-        ...theme.typography.h3,
         color: theme.colors.surface,
         letterSpacing: 1,
     }

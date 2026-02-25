@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, I18nManager } from 'react-native';
+import { View, StyleSheet, ScrollView, I18nManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { theme } from '../theme';
 import { FireIcon, StarIcon, HeartIcon, ProfileIcon } from '../components/CustomIcons';
 import { useTranslation } from 'react-i18next';
+import { AppText } from '../components/AppText';
 
 const isRTL = I18nManager.isRTL;
 
@@ -20,29 +21,29 @@ export default function ProfileScreen() {
                     <View style={styles.avatarCircle}>
                         <ProfileIcon size={60} color={theme.colors.surface} />
                     </View>
-                    <Text style={styles.username}>{t('profile.username')}</Text>
+                    <AppText style={styles.username} variant="h2">{t('profile.username')}</AppText>
                 </View>
 
                 <View style={styles.statsContainer}>
-                    <Text style={styles.sectionTitle}>{t('profile.statsTitle')}</Text>
+                    <AppText style={styles.sectionTitle} variant="h3">{t('profile.statsTitle')}</AppText>
 
                     <View style={styles.statGrid}>
                         <View style={styles.statCard}>
                             <FireIcon size={32} color={theme.colors.secondary} fill={theme.colors.secondary} />
-                            <Text style={styles.statValue}>{user.streakCount}</Text>
-                            <Text style={styles.statLabel}>{t('profile.streak')}</Text>
+                            <AppText style={styles.statValue} variant="h2">{user.streakCount}</AppText>
+                            <AppText style={styles.statLabel} variant="bodySmall">{t('profile.streak')}</AppText>
                         </View>
 
                         <View style={styles.statCard}>
                             <StarIcon size={32} color={theme.colors.primary} fill={theme.colors.primaryLight} />
-                            <Text style={styles.statValue}>{user.totalXP}</Text>
-                            <Text style={styles.statLabel}>{t('profile.xp')}</Text>
+                            <AppText style={styles.statValue} variant="h2">{user.totalXP}</AppText>
+                            <AppText style={styles.statLabel} variant="bodySmall">{t('profile.xp')}</AppText>
                         </View>
 
                         <View style={styles.statCard}>
                             <HeartIcon size={32} color={theme.colors.danger} fill={theme.colors.dangerLight} />
-                            <Text style={styles.statValue}>{user.hearts}</Text>
-                            <Text style={styles.statLabel}>{t('profile.hearts')}</Text>
+                            <AppText style={styles.statValue} variant="h2">{user.hearts}</AppText>
+                            <AppText style={styles.statLabel} variant="bodySmall">{t('profile.hearts')}</AppText>
                         </View>
                     </View>
                 </View>
@@ -73,16 +74,13 @@ const styles = StyleSheet.create({
         ...theme.shadows.md,
     },
     username: {
-        ...theme.typography.h2,
         marginTop: 15,
     },
     statsContainer: {
         marginTop: 20,
     },
     sectionTitle: {
-        ...theme.typography.h3,
         marginBottom: 15,
-        textAlign: isRTL ? 'right' : 'left',
     },
     statGrid: {
         flexDirection: 'row',
@@ -100,12 +98,10 @@ const styles = StyleSheet.create({
         ...theme.shadows.sm,
     },
     statValue: {
-        ...theme.typography.h2,
         marginTop: 10,
         color: theme.colors.textMain,
     },
     statLabel: {
-        ...theme.typography.bodySmall,
         marginTop: 5,
     }
 });

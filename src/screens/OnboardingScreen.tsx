@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch } from 'react-redux';
+import { AppDispatch } from '../store';
 import { completeOnboarding } from '../store/slices/userSlice';
 import { theme } from '../theme';
 import { useTranslation } from 'react-i18next';
 import { useSQLiteContext } from 'expo-sqlite';
-import { getTextAlign } from '../utils/styleUtils';
 import { resetDatabase } from '../utils/devUtils';
+import { AppText } from '../components/AppText';
 
 
 export default function OnboardingScreen() {
-    const dispatch = useDispatch();
+    const dispatch = useDispatch<AppDispatch>();
     const db = useSQLiteContext();
     const { t } = useTranslation();
     const [level, setLevel] = useState<string | null>(null);
@@ -26,32 +27,32 @@ export default function OnboardingScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.title}>{t('onboarding.title')}</Text>
-                <Text style={styles.subtitle}>{t('onboarding.subtitle')}</Text>
+                <AppText style={styles.title} variant="h1">{t('onboarding.title')}</AppText>
+                <AppText style={styles.subtitle} variant="body">{t('onboarding.subtitle')}</AppText>
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{t('onboarding.levelLabel')}</Text>
+                <AppText style={styles.sectionTitle} variant="h3">{t('onboarding.levelLabel')}</AppText>
                 <TouchableOpacity
                     style={[styles.optionCard, level === 'beginner' && styles.optionSelected]}
                     onPress={() => setLevel('beginner')}
                 >
-                    <Text style={[styles.optionText, level === 'beginner' && styles.optionTextSelected]}>
+                    <AppText style={[styles.optionText, level === 'beginner' && styles.optionTextSelected]} variant="h3">
                         {t('onboarding.levelBeginner')}
-                    </Text>
+                    </AppText>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={[styles.optionCard, level === 'intermediate' && styles.optionSelected]}
                     onPress={() => setLevel('intermediate')}
                 >
-                    <Text style={[styles.optionText, level === 'intermediate' && styles.optionTextSelected]}>
+                    <AppText style={[styles.optionText, level === 'intermediate' && styles.optionTextSelected]} variant="h3">
                         {t('onboarding.levelIntermediate')}
-                    </Text>
+                    </AppText>
                 </TouchableOpacity>
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{t('onboarding.timeLabel')}</Text>
+                <AppText style={styles.sectionTitle} variant="h3">{t('onboarding.timeLabel')}</AppText>
                 <View style={styles.timeRow}>
                     {[5, 10, 15].map(tVal => (
                         <TouchableOpacity
@@ -59,7 +60,7 @@ export default function OnboardingScreen() {
                             style={[styles.timeBox, time === tVal && styles.timeBoxSelected]}
                             onPress={() => setTime(tVal)}
                         >
-                            <Text style={[styles.timeText, time === tVal && styles.timeTextSelected]}>{tVal}m</Text>
+                            <AppText style={[styles.timeText, time === tVal && styles.timeTextSelected]} variant="h2">{tVal}m</AppText>
                         </TouchableOpacity>
                     ))}
                 </View>
@@ -70,7 +71,7 @@ export default function OnboardingScreen() {
                 disabled={!level || !time}
                 onPress={handleStart}
             >
-                <Text style={styles.startButtonText}>{t('onboarding.start')}</Text>
+                <AppText style={styles.startButtonText} variant="h2">{t('onboarding.start')}</AppText>
             </TouchableOpacity>
 
             {__DEV__ && (
@@ -78,7 +79,7 @@ export default function OnboardingScreen() {
                     style={styles.devResetButton}
                     onPress={() => resetDatabase(db)}
                 >
-                    <Text style={styles.devResetText}>[DEV] Delete Database</Text>
+                    <AppText style={styles.devResetText}>[DEV] Delete Database</AppText>
                 </TouchableOpacity>
             )}
         </SafeAreaView>
@@ -98,13 +99,11 @@ const styles = StyleSheet.create({
         marginBottom: 40,
     },
     title: {
-        ...theme.typography.h1,
         color: theme.colors.primary,
         textAlign: 'center',
         marginBottom: 10,
     },
     subtitle: {
-        ...theme.typography.body,
         textAlign: 'center',
         color: theme.colors.textMuted,
     },
@@ -112,10 +111,8 @@ const styles = StyleSheet.create({
         marginBottom: 30,
     },
     sectionTitle: {
-        ...theme.typography.h3,
         marginBottom: 15,
         color: theme.colors.textMain,
-        textAlign: getTextAlign(), // Dynamically sets alignment based on actual UI thread language
     },
     optionCard: {
         backgroundColor: theme.colors.surface,
@@ -130,7 +127,6 @@ const styles = StyleSheet.create({
         borderColor: theme.colors.primary,
     },
     optionText: {
-        ...theme.typography.h3,
         color: theme.colors.textMain,
         textAlign: 'center',
     },
@@ -156,7 +152,6 @@ const styles = StyleSheet.create({
         borderColor: '#D97706', // Darker gold
     },
     timeText: {
-        ...theme.typography.h2,
         color: theme.colors.textMain,
     },
     timeTextSelected: {
@@ -174,7 +169,6 @@ const styles = StyleSheet.create({
         backgroundColor: theme.colors.border,
     },
     startButtonText: {
-        ...theme.typography.h2,
         color: theme.colors.surface,
     },
     devResetButton: {
