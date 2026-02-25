@@ -5,7 +5,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { theme } from '../theme';
-import Svg, { Path } from 'react-native-svg';
+import { RoadmapPath } from '../components/screens/RoadmapPath';
+import { RoadmapNode } from '../components/screens/RoadmapNode';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
@@ -64,25 +65,7 @@ export default function RoadmapScreen({ route, navigation }: RoadmapScreenProps)
 
     const totalHeight = levels.length * LEVEL_HEIGHT + 100;
 
-    // Generate the SVG path data
-    const generatePathData = () => {
-        if (levels.length < 2) return '';
-        let d = "M " + getPosition(0).x + " " + getPosition(0).y;
 
-        for (let i = 0; i < levels.length - 1; i++) {
-            const p1 = getPosition(i);
-            const p2 = getPosition(i + 1);
-
-            // Control points for organic cubic bezier curve
-            const cp1Y = p1.y + (p2.y - p1.y) / 2;
-            const cp1X = p1.x;
-            const cp2Y = p1.y + (p2.y - p1.y) / 2;
-            const cp2X = p2.x;
-
-            d += " C " + cp1X + " " + cp1Y + ", " + cp2X + " " + cp2Y + ", " + p2.x + " " + p2.y;
-        }
-        return d;
-    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -95,19 +78,7 @@ export default function RoadmapScreen({ route, navigation }: RoadmapScreenProps)
             </View>
 
             <ScrollView contentContainerStyle={{ height: totalHeight, paddingBottom: 50 }}>
-                {levels.length > 1 && (
-                    <Svg style={StyleSheet.absoluteFill}>
-                        {/* The background winding path */}
-                        <Path
-                            d={generatePathData()}
-                            stroke={theme.colors.border}
-                            strokeWidth={16}
-                            fill="none"
-                            strokeLinecap="round"
-                        />
-                        {/* The active/filled path indicator could go here layered on top */}
-                    </Svg>
-                )}
+                <RoadmapPath levels={levels} getPosition={getPosition} />
 
                 {levels.map((level, index) => {
                     const { x, y } = getPosition(index);
@@ -115,29 +86,15 @@ export default function RoadmapScreen({ route, navigation }: RoadmapScreenProps)
                     const isCompleted = level.is_completed === 1;
 
                     return (
-                        <View
+                        <RoadmapNode
                             key={level.id}
-                            style={[
-                                styles.nodeWrapper,
-                                { left: x - (NODE_RADIUS + 20), top: y - (NODE_RADIUS + 30) }
-                            ]}
-                        >
-                            <TouchableOpacity
-                                disabled={isDisabled}
-                                activeOpacity={0.8}
-                                onPress={() => handleLevelPress(level.id)}
-                                style={[
-                                    styles.nodeCircle,
-                                    isDisabled && styles.nodeDisabled,
-                                    isCompleted && styles.nodeCompleted
-                                ]}
-                            >
-                                <MaterialCommunityIcons name={isCompleted ? "check" : "star"} size={32} color={isDisabled ? '#9CA3AF' : theme.colors.surface} />
-                            </TouchableOpacity>
-                            <View style={styles.tooltip}>
-                                <AppText style={styles.tooltipText} variant="bodySmall">{level.title}</AppText>
-                            </View>
-                        </View>
+                            level={level}
+                            x={x}
+                            y={y}
+                            isCompleted={isCompleted}
+                            isDisabled={isDisabled}
+                            onPress={handleLevelPress}
+                        />
                     );
                 })}
             </ScrollView>
@@ -163,43 +120,5 @@ const styles = StyleSheet.create({
     backButton: {
         padding: 5,
     },
-    headerTitle: {},
-    nodeWrapper: {
-        position: 'absolute',
-        alignItems: 'center',
-        width: (NODE_RADIUS + 20) * 2,
-    },
-    nodeCircle: {
-        width: NODE_RADIUS * 2,
-        height: NODE_RADIUS * 2,
-        borderRadius: NODE_RADIUS,
-        backgroundColor: theme.colors.primary,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 4,
-        borderColor: theme.colors.surface,
-        ...theme.shadows.md,
-    },
-    nodeDisabled: {
-        backgroundColor: theme.colors.border,
-    },
-    nodeCompleted: {
-        backgroundColor: theme.colors.success,
-        borderColor: theme.colors.successLight,
-    },
-    tooltip: {
-        marginTop: 8,
-        backgroundColor: theme.colors.surface,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: theme.layout.borderRadius,
-        ...theme.shadows.sm,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
-    },
-    tooltipText: {
-        fontWeight: '600',
-        color: theme.colors.textMain,
-        textAlign: 'center',
-    }
+    headerTitle: {}
 });

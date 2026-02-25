@@ -20,21 +20,7 @@ interface HomeScreenProps {
     navigation: HomeScreenNavigationProp;
 }
 
-interface Node {
-    id: number;
-    title: string;
-    total_levels: number;
-    completed_levels: number;
-}
-
-interface Unit {
-    id: number;
-    title: string;
-    description: string;
-    nodes: Node[];
-    totalUnitLevels: number;
-    completedUnitLevels: number;
-}
+import { UnitCard } from '../components/screens/UnitCard';
 
 
 export default function HomeScreen({ navigation }: HomeScreenProps) {
@@ -69,52 +55,14 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
                 <View style={styles.categories}>
                     <AppText style={styles.sectionTitle} variant="h2">{t('home.curriculum')}</AppText>
-                    {units.map((unit) => (
-                        <View key={unit.id} style={styles.unitContainer}>
-                            <TouchableOpacity
-                                style={styles.card}
-                                activeOpacity={0.8}
-                                onPress={() => toggleUnit(unit.id)}
-                            >
-                                <View style={styles.cardIconBox}>
-                                    <MoonIcon size={32} color={theme.colors.primary} />
-                                </View>
-                                <View style={styles.cardContent}>
-                                    <AppText style={styles.cardTitle} variant="h3">{unit.title}</AppText>
-                                    <AppText style={styles.cardDesc} variant="bodySmall">{unit.description}</AppText>
-                                    {unit.totalUnitLevels > 0 && (
-                                        <View style={styles.unitProgressContainer}>
-                                            <View style={[styles.unitProgressBar, { width: `${(unit.completedUnitLevels / unit.totalUnitLevels) * 100}%` }]} />
-                                        </View>
-                                    )}
-                                </View>
-                                <MaterialCommunityIcons
-                                    name={expandedUnit === unit.id ? 'chevron-up' : 'chevron-down'}
-                                    size={28}
-                                    color={theme.colors.textMuted}
-                                />
-                            </TouchableOpacity>
-
-                            {expandedUnit === unit.id && (
-                                <View style={styles.nodesList}>
-                                    {unit.nodes.map(node => (
-                                        <TouchableOpacity
-                                            key={node.id}
-                                            style={styles.nodeItem}
-                                            onPress={() => handleNodePress(node.id, node.title)}
-                                        >
-                                            <PathIcon size={20} color={theme.colors.secondary} />
-                                            <AppText style={styles.nodeTitle} variant="h3">{node.title}</AppText>
-                                            {node.total_levels > 0 && node.completed_levels === node.total_levels ? (
-                                                <MaterialCommunityIcons name="check-circle" size={24} color={theme.colors.success} style={{ marginLeft: 'auto' }} />
-                                            ) : (
-                                                <MaterialCommunityIcons name="chevron-left" size={20} color={theme.colors.textMuted} style={{ marginLeft: 'auto' }} />
-                                            )}
-                                        </TouchableOpacity>
-                                    ))}
-                                </View>
-                            )}
-                        </View>
+                    {units.map((unit: any) => (
+                        <UnitCard
+                            key={unit.id}
+                            unit={unit}
+                            expanded={expandedUnit === unit.id}
+                            onToggle={() => toggleUnit(unit.id)}
+                            onNodePress={handleNodePress}
+                        />
                     ))}
                 </View>
             </ScrollView>
@@ -146,74 +94,5 @@ const styles = StyleSheet.create({
     sectionTitle: {
         marginBottom: 15,
         color: theme.colors.textMain,
-    },
-    unitContainer: {
-        marginBottom: 16,
-    },
-    card: {
-        flexDirection: 'row',
-        backgroundColor: theme.colors.surface,
-        borderRadius: theme.layout.borderRadius,
-        padding: 20,
-        ...theme.shadows.sm,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
-        alignItems: 'center',
-    },
-    cardIconBox: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: theme.colors.successLight,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 15, // Flexbox will reverse this automatically in RTL if react-native-safe-area-context doesn't interfere, but setting strictly RTL logic is handled by standard margin flipping in React Native.
-        marginStart: 0,
-        marginEnd: 15,
-    },
-    cardContent: {
-        flex: 1,
-    },
-    cardTitle: {
-        marginBottom: 4,
-        color: theme.colors.textMain,
-    },
-    cardDesc: {
-        lineHeight: 20,
-    },
-    nodesList: {
-        backgroundColor: theme.colors.surface,
-        borderBottomLeftRadius: theme.layout.borderRadius,
-        borderBottomRightRadius: theme.layout.borderRadius,
-        borderWidth: 1,
-        borderTopWidth: 0,
-        borderColor: theme.colors.border,
-        padding: 10,
-        marginTop: -5, // tuck under the card
-        paddingTop: 15,
-    },
-    nodeItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.background,
-    },
-    nodeTitle: {
-        color: theme.colors.textMain,
-        flex: 1, // Take up remaining space so the chevron stays on the edge
-        paddingHorizontal: 15,
-    },
-    unitProgressContainer: {
-        height: 6,
-        backgroundColor: theme.colors.border,
-        borderRadius: 3,
-        marginTop: 10,
-        overflow: 'hidden',
-    },
-    unitProgressBar: {
-        height: '100%',
-        backgroundColor: theme.colors.success,
-        borderRadius: 3,
     }
 });
