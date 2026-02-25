@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
@@ -32,6 +32,9 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
 
     const shakeAnimation = useSharedValue(0);
 
+    const isProcessingRef = useRef(false);
+    const hasFinishedRef = useRef(false);
+
     useEffect(() => {
         const load = async () => {
             const resultAction = await dispatch(loadExercisesForSession({ levelId, isPractice: !!isPractice }));
@@ -51,7 +54,8 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
     const currentExercise = exercises[currentExerciseIndex];
 
     const handleAnswerSubmit = async (answer: string) => {
-        if (!currentExercise || isAnswerRevealed) return;
+        if (!currentExercise || isAnswerRevealed || isProcessingRef.current) return;
+        isProcessingRef.current = true;
         setSelectedAnswer(answer);
 
         const isCorrect = answer === currentExercise.correct_answer;
@@ -92,15 +96,20 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
                     return;
                 }
             }
+            isProcessingRef.current = false;
         }
     };
 
     const proceedToNext = () => {
+        if (hasFinishedRef.current) return;
+
+        isProcessingRef.current = false;
         setSelectedAnswer(null);
         setIsAnswerRevealed(false);
         if (currentExerciseIndex < exercises.length - 1) {
             dispatch(nextExercise());
         } else {
+            hasFinishedRef.current = true;
             // End of Lesson
             dispatch(completeSession());
             const title = isPractice ? t('review.title') : t('common.continue');
