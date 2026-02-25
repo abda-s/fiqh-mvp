@@ -12,17 +12,23 @@ interface ExerciseHeaderProps {
     totalExercises: number;
     isPractice: boolean;
     hearts: number;
+    isAnswerRevealed?: boolean;
 }
 
-export function ExerciseHeader({ onClose, currentExerciseIndex, totalExercises, isPractice, hearts }: ExerciseHeaderProps) {
+export function ExerciseHeader({ onClose, currentExerciseIndex, totalExercises, isPractice, hearts, isAnswerRevealed }: ExerciseHeaderProps) {
     const { t } = useTranslation();
+    
+    const progressValue = isAnswerRevealed 
+        ? ((currentExerciseIndex + 1) / totalExercises) * 100
+        : (currentExerciseIndex / totalExercises) * 100;
+    
     return (
         <View style={styles.header}>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
                 <MaterialCommunityIcons name="close" size={28} color={theme.colors.textMuted} />
             </TouchableOpacity>
             <View style={styles.progressContainer}>
-                <View style={[styles.progressBar, { width: totalExercises > 0 ? `${(currentExerciseIndex / totalExercises) * 100}%` : '0%' } as any]} />
+                <View style={[styles.progressBar, { width: totalExercises > 0 ? `${progressValue}%` : '0%' } as any]} />
             </View>
             <View style={styles.heartBox}>
                 {isPractice ? (

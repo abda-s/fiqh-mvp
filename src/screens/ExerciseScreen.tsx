@@ -61,6 +61,7 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
                 totalExercises={exercises.length}
                 isPractice={!!isPractice}
                 hearts={hearts}
+                isAnswerRevealed={isAnswerRevealed}
             />
 
             <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
