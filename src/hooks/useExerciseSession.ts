@@ -57,9 +57,8 @@ export function useExerciseSession(levelId: number, isPractice: boolean, onCompl
             dispatch(recordCorrectAnswer(10));
             dispatch(addXP(10));
 
-            setTimeout(() => {
-                proceedToNext();
-            }, 1000);
+            setIsAnswerRevealed(true);
+            isProcessingRef.current = false;
         } else {
             playErrorHaptic();
             triggerShakeAnimation(shakeAnimation);

@@ -22,7 +22,7 @@ export async function initDatabase(db: SQLite.SQLiteDatabase) {
               CREATE TABLE IF NOT EXISTS units (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, description TEXT, order_index INTEGER NOT NULL);
               CREATE TABLE IF NOT EXISTS nodes (id INTEGER PRIMARY KEY AUTOINCREMENT, unit_id INTEGER NOT NULL REFERENCES units(id), title TEXT NOT NULL, order_index INTEGER NOT NULL);
               CREATE TABLE IF NOT EXISTS levels (id INTEGER PRIMARY KEY AUTOINCREMENT, node_id INTEGER NOT NULL REFERENCES nodes(id), title TEXT NOT NULL, order_index INTEGER NOT NULL);
-              CREATE TABLE IF NOT EXISTS exercises (id INTEGER PRIMARY KEY AUTOINCREMENT, level_id INTEGER NOT NULL REFERENCES levels(id), type TEXT NOT NULL, content_json TEXT NOT NULL, correct_answer TEXT NOT NULL);
+              CREATE TABLE IF NOT EXISTS exercises (id INTEGER PRIMARY KEY AUTOINCREMENT, level_id INTEGER NOT NULL REFERENCES levels(id), type TEXT NOT NULL, content_json TEXT NOT NULL, correct_answer TEXT NOT NULL, explanation TEXT NOT NULL);
               CREATE TABLE IF NOT EXISTS profiles (id INTEGER PRIMARY KEY AUTOINCREMENT, total_xp INTEGER DEFAULT 0, streak_count INTEGER DEFAULT 0, hearts INTEGER DEFAULT 5, has_onboarded INTEGER DEFAULT 0, knowledge_level TEXT, time_commitment INTEGER, last_active_at TEXT);
               CREATE TABLE IF NOT EXISTS user_progress (id INTEGER PRIMARY KEY AUTOINCREMENT, level_id INTEGER UNIQUE NOT NULL REFERENCES levels(id), is_completed INTEGER DEFAULT 0, high_score INTEGER DEFAULT 0);
               CREATE TABLE IF NOT EXISTS srs_reviews (id INTEGER PRIMARY KEY AUTOINCREMENT, exercise_id INTEGER UNIQUE NOT NULL REFERENCES exercises(id), ease_factor REAL DEFAULT 2.5, interval INTEGER DEFAULT 0, repetitions INTEGER DEFAULT 0, next_review_date TEXT);
@@ -79,7 +79,8 @@ export async function initDatabase(db: SQLite.SQLiteDatabase) {
                     levelId: e.level_id,
                     type: e.type,
                     contentJson: JSON.stringify(e.content),
-                    correctAnswer: e.correct_answer
+                    correctAnswer: e.correct_answer,
+                    explanation: e.explanation
                 }));
                 await drizzleDb.insert(schema.exercises).values(mappedEx);
             }

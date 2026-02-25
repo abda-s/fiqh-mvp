@@ -11,6 +11,7 @@ export interface Exercise {
     type: 'multiple_choice' | 'ordering' | 'matching' | 'true_false';
     content_json: string;
     correct_answer: string;
+    explanation: string;
 }
 
 export interface SessionState {
@@ -49,7 +50,8 @@ export const loadExercisesForSession = createAsyncThunk(
                     level_id: schema.exercises.levelId,
                     type: schema.exercises.type,
                     content_json: schema.exercises.contentJson,
-                    correct_answer: schema.exercises.correctAnswer
+                    correct_answer: schema.exercises.correctAnswer,
+                    explanation: schema.exercises.explanation
                 })
                     .from(schema.exercises)
                     .innerJoin(schema.srsReviews, eq(schema.exercises.id, schema.srsReviews.exerciseId))
@@ -64,7 +66,8 @@ export const loadExercisesForSession = createAsyncThunk(
                     level_id: schema.exercises.levelId,
                     type: schema.exercises.type,
                     content_json: schema.exercises.contentJson,
-                    correct_answer: schema.exercises.correctAnswer
+                    correct_answer: schema.exercises.correctAnswer,
+                    explanation: schema.exercises.explanation
                 }).from(schema.exercises).where(eq(schema.exercises.levelId, levelId));
 
                 data = queryRes as Exercise[];

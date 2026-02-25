@@ -37,7 +37,8 @@ export const exercises = sqliteTable('exercises', {
   levelId: integer('level_id').notNull().references(() => levels.id),
   type: text('type').notNull(),
   contentJson: text('content_json').notNull(),
-  correctAnswer: text('correct_answer').notNull()
+  correctAnswer: text('correct_answer').notNull(),
+  explanation: text('explanation').notNull()
 });
 
 export const userProgress = sqliteTable('user_progress', {

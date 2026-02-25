@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { AppText } from '../components/AppText';
 import { ExerciseHeader } from '../components/screens/ExerciseHeader';
 import { ExerciseOptions } from '../components/screens/ExerciseOptions';
+import { ExerciseExplanation } from '../components/screens/ExerciseExplanation';
 import { useExerciseSession } from '../hooks/useExerciseSession';
 
 type ExerciseScreenProps = NativeStackScreenProps<RootStackParamList, 'Exercise'>;
@@ -62,26 +63,32 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
                 hearts={hearts}
             />
 
-            <Animated.View style={[styles.questionArea, animatedStyle]}>
-                <AppText style={styles.questionLabel} variant="h3">{t('exercise.questionLabel')}</AppText>
-                <AppText style={styles.questionText} variant="h1">{content.question}</AppText>
-            </Animated.View>
+            <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                <Animated.View style={[styles.questionArea, animatedStyle]}>
+                    <AppText style={styles.questionLabel} variant="h3">{t('exercise.questionLabel')}</AppText>
+                    <AppText style={styles.questionText} variant="h1">{content.question}</AppText>
+                </Animated.View>
 
-            <ExerciseOptions
-                currentExercise={currentExercise}
-                selectedAnswer={selectedAnswer}
-                isAnswerRevealed={isAnswerRevealed}
-                handleAnswerSubmit={handleAnswerSubmit}
-            />
+                <ExerciseOptions
+                    currentExercise={currentExercise}
+                    selectedAnswer={selectedAnswer}
+                    isAnswerRevealed={isAnswerRevealed}
+                    handleAnswerSubmit={handleAnswerSubmit}
+                />
+
+                {isAnswerRevealed && currentExercise.explanation && (
+                    <ExerciseExplanation explanation={currentExercise.explanation} />
+                )}
+            </ScrollView>
 
             <View style={styles.bottomBar}>
                 {isAnswerRevealed ? (
                     <TouchableOpacity
-                        style={[styles.checkButton, { backgroundColor: theme.colors.danger }]}
+                        style={styles.continueButton}
                         activeOpacity={0.8}
                         onPress={proceedToNext}
                     >
-                        <AppText style={styles.checkButtonText} variant="h3">{t('common.continue')}</AppText>
+                        <AppText style={styles.continueButtonText} variant="h3">{t('common.continue')}</AppText>
                     </TouchableOpacity>
                 ) : (
                     <TouchableOpacity
@@ -103,10 +110,17 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: theme.colors.background,
     },
-    questionArea: {
+    scrollView: {
         flex: 1,
+    },
+    scrollContent: {
+        flexGrow: 1,
+        paddingBottom: 10,
+    },
+    questionArea: {
         paddingHorizontal: 30,
-        justifyContent: 'center',
+        paddingTop: 20,
+        paddingBottom: 10,
     },
     questionLabel: {
         color: theme.colors.textMuted,
@@ -121,7 +135,7 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: theme.colors.border,
         backgroundColor: theme.colors.surface,
-        paddingBottom: 40, // For bottom safe area
+        paddingBottom: 40,
     },
     checkButton: {
         backgroundColor: theme.colors.success,
@@ -134,6 +148,18 @@ const styles = StyleSheet.create({
     },
     checkButtonText: {
         color: theme.colors.surface,
+        letterSpacing: 1,
+    },
+    continueButton: {
+        backgroundColor: theme.colors.surface,
+        paddingVertical: 18,
+        borderRadius: 16,
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: theme.colors.primary,
+    },
+    continueButtonText: {
+        color: theme.colors.primary,
         letterSpacing: 1,
     }
 });
