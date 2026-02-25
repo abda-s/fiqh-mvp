@@ -11,6 +11,7 @@ import { ExerciseHeader } from '../components/screens/ExerciseHeader';
 import { ExerciseOptions } from '../components/screens/ExerciseOptions';
 import { ExerciseExplanation } from '../components/screens/ExerciseExplanation';
 import { useExerciseSession } from '../hooks/useExerciseSession';
+import { useExerciseOptions } from '../hooks/useExerciseOptions';
 
 type ExerciseScreenProps = NativeStackScreenProps<RootStackParamList, 'Exercise'>;
 
@@ -22,7 +23,6 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
         if (navigation.canGoBack()) {
             navigation.goBack();
         } else {
-            // @ts-ignore - Route params definition might be strict, fallback gracefully
             navigation.replace('MainTabs');
         }
     }, [navigation]);
@@ -43,15 +43,71 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
         animatedStyle
     } = useExerciseSession(levelId, !!isPractice, handleComplete, handleGoBack);
 
+    const {
+        currentOrder,
+        setCurrentOrder,
+        getQuestionText,
+        getQuestionLabel,
+        isCheckDisabled
+    } = useExerciseOptions(currentExercise, selectedAnswer);
+
     if (loadingExercises || !isActive) {
-        return <View style={styles.container}><AppText>Loading Exercises...</AppText></View>;
+        return (
+            <View style={styles.container}>
+                <AppText>Loading Exercises...</AppText>
+            </View>
+        );
     }
 
     if (!currentExercise) {
-        return <View style={styles.container}><AppText>No exercises found for this level.</AppText></View>;
+        return (
+            <View style={styles.container}>
+                <AppText>No exercises found for this level.</AppText>
+            </View>
+        );
     }
 
-    const content = JSON.parse(currentExercise.content_json);
+    const isOrdering = currentExercise.type === 'ordering';
+    const showQuestionArea = currentExercise.type !== 'fill_blank';
+
+    const handleCheckPress = () => {
+        if (currentExercise.type === 'ordering' && currentOrder) {
+            handleAnswerSubmit(currentOrder);
+        } else if (selectedAnswer) {
+            handleAnswerSubmit(selectedAnswer);
+        }
+    };
+
+    const renderContent = () => (
+        <>
+            {showQuestionArea && !isOrdering && (
+                <Animated.View style={[styles.questionArea, animatedStyle]}>
+                    {getQuestionLabel() ? (
+                        <AppText style={styles.questionLabel} variant="h3">{getQuestionLabel()}</AppText>
+                    ) : null}
+                    <AppText style={styles.questionText} variant="h1">{getQuestionText()}</AppText>
+                </Animated.View>
+            )}
+
+            {showQuestionArea && isOrdering && (
+                <View style={styles.questionArea}>
+                    <AppText style={styles.questionText} variant="h1">{getQuestionText()}</AppText>
+                </View>
+            )}
+
+            <ExerciseOptions
+                currentExercise={currentExercise}
+                selectedAnswer={selectedAnswer}
+                isAnswerRevealed={isAnswerRevealed}
+                handleAnswerSubmit={handleAnswerSubmit}
+                onOrderChange={setCurrentOrder}
+            />
+
+            {isAnswerRevealed && currentExercise.explanation && (
+                <ExerciseExplanation explanation={currentExercise.explanation} />
+            )}
+        </>
+    );
 
     return (
         <SafeAreaView style={styles.container}>
@@ -64,23 +120,15 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
                 isAnswerRevealed={isAnswerRevealed}
             />
 
-            <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                <Animated.View style={[styles.questionArea, animatedStyle]}>
-                    <AppText style={styles.questionLabel} variant="h3">{t('exercise.questionLabel')}</AppText>
-                    <AppText style={styles.questionText} variant="h1">{content.question}</AppText>
-                </Animated.View>
-
-                <ExerciseOptions
-                    currentExercise={currentExercise}
-                    selectedAnswer={selectedAnswer}
-                    isAnswerRevealed={isAnswerRevealed}
-                    handleAnswerSubmit={handleAnswerSubmit}
-                />
-
-                {isAnswerRevealed && currentExercise.explanation && (
-                    <ExerciseExplanation explanation={currentExercise.explanation} />
-                )}
-            </ScrollView>
+            {isOrdering ? (
+                <View style={styles.contentContainer}>
+                    {renderContent()}
+                </View>
+            ) : (
+                <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                    {renderContent()}
+                </ScrollView>
+            )}
 
             <View style={styles.bottomBar}>
                 {isAnswerRevealed ? (
@@ -91,12 +139,12 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
                     >
                         <AppText style={styles.continueButtonText} variant="h3">{t('common.continue')}</AppText>
                     </TouchableOpacity>
-                ) : (
+                ) : currentExercise.type !== 'fill_blank' && (
                     <TouchableOpacity
-                        style={[styles.checkButton, !selectedAnswer && styles.checkButtonDisabled]}
-                        disabled={!selectedAnswer}
+                        style={[styles.checkButton, isCheckDisabled && styles.checkButtonDisabled]}
+                        disabled={isCheckDisabled}
                         activeOpacity={0.8}
-                        onPress={() => selectedAnswer && handleAnswerSubmit(selectedAnswer)}
+                        onPress={handleCheckPress}
                     >
                         <AppText style={styles.checkButtonText} variant="h3">{t('common.check')}</AppText>
                     </TouchableOpacity>
@@ -110,6 +158,10 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background,
+    },
+    contentContainer: {
+        flex: 1,
+        paddingBottom: 10,
     },
     scrollView: {
         flex: 1,
@@ -162,5 +214,5 @@ const styles = StyleSheet.create({
     continueButtonText: {
         color: theme.colors.primary,
         letterSpacing: 1,
-    }
+    },
 });

@@ -8,7 +8,7 @@ import { calculateSM2, getLocalYYYYMMDD } from '../../utils/sm2';
 export interface Exercise {
     id: number;
     level_id: number;
-    type: 'multiple_choice' | 'ordering' | 'matching' | 'true_false';
+    type: 'multiple_choice' | 'ordering' | 'matching' | 'true_false' | 'fill_blank' ;
     content_json: string;
     correct_answer: string;
     explanation: string;

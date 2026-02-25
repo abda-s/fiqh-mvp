@@ -1,110 +1,96 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { theme } from '../../theme';
 import { AppText } from '../AppText';
-import { useTranslation } from 'react-i18next';
+import {
+    MultipleChoiceOptions,
+    TrueFalseOptions,
+    FillBlankOptions,
+    OrderingOptions
+} from './options';
 
 interface ExerciseOptionsProps {
     currentExercise: any;
     selectedAnswer: string | null;
     isAnswerRevealed: boolean;
     handleAnswerSubmit: (ans: string) => void;
+    orderedWords?: any[];
+    onOrderChange?: (order: string) => void;
 }
 
-export function ExerciseOptions({ currentExercise, selectedAnswer, isAnswerRevealed, handleAnswerSubmit }: ExerciseOptionsProps) {
-    const { t } = useTranslation();
+export function ExerciseOptions({ 
+    currentExercise, 
+    selectedAnswer, 
+    isAnswerRevealed, 
+    handleAnswerSubmit,
+    onOrderChange
+}: ExerciseOptionsProps) {
     const content = JSON.parse(currentExercise.content_json);
 
-    const getOptionStyle = (opt: string) => {
-        if (isAnswerRevealed && opt === currentExercise?.correct_answer) {
-            return [styles.optionButton, styles.correctOption];
-        }
+    switch (currentExercise.type) {
+        case 'multiple_choice':
+            return (
+                <MultipleChoiceOptions
+                    options={content.options}
+                    selectedAnswer={selectedAnswer}
+                    correctAnswer={currentExercise.correct_answer}
+                    isAnswerRevealed={isAnswerRevealed}
+                    onSelect={handleAnswerSubmit}
+                />
+            );
 
-        if (selectedAnswer !== opt) return styles.optionButton;
-        if (selectedAnswer === currentExercise.correct_answer) {
-            return [styles.optionButton, styles.correctOption];
-        }
-        return [styles.optionButton, styles.wrongOption];
-    };
+        case 'true_false':
+            return (
+                <TrueFalseOptions
+                    selectedAnswer={selectedAnswer}
+                    correctAnswer={currentExercise.correct_answer}
+                    isAnswerRevealed={isAnswerRevealed}
+                    onSelect={handleAnswerSubmit}
+                />
+            );
 
-    if (currentExercise.type === 'true_false') {
-        return (
-            <View style={styles.optionsContainer}>
-                <TouchableOpacity
-                    style={getOptionStyle('true')}
-                    disabled={isAnswerRevealed}
-                    onPress={() => handleAnswerSubmit('true')}
-                >
-                    <AppText style={styles.optionText} variant="h3">{t('common.true')}</AppText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={getOptionStyle('false')}
-                    disabled={isAnswerRevealed}
-                    onPress={() => handleAnswerSubmit('false')}
-                >
-                    <AppText style={styles.optionText} variant="h3">{t('common.false')}</AppText>
-                </TouchableOpacity>
-            </View>
-        );
+        case 'fill_blank':
+            return (
+                <FillBlankOptions
+                    sentence={content.sentence}
+                    options={content.options}
+                    selectedAnswer={selectedAnswer}
+                    correctAnswer={currentExercise.correct_answer}
+                    isAnswerRevealed={isAnswerRevealed}
+                    onSelect={handleAnswerSubmit}
+                />
+            );
+
+        case 'ordering':
+            return (
+                <OrderingOptions
+                    words={content.words}
+                    correctOrder={currentExercise.correct_answer}
+                    isAnswerRevealed={isAnswerRevealed}
+                    onOrderChange={onOrderChange || (() => {})}
+                />
+            );
+
+        default:
+            return (
+                <View style={styles.comingSoon}>
+                    <AppText style={styles.comingSoonText} variant="bodySmall">
+                        This exercise type ({currentExercise.type}) is under construction.
+                    </AppText>
+                </View>
+            );
     }
-
-    if (currentExercise.type === 'multiple_choice') {
-        return (
-            <View style={styles.optionsContainer}>
-                {content.options.map((opt: string, idx: number) => (
-                    <TouchableOpacity
-                        key={idx}
-                        style={getOptionStyle(opt)}
-                        disabled={isAnswerRevealed}
-                        onPress={() => handleAnswerSubmit(opt)}
-                    >
-                        <AppText style={styles.optionText} variant="h3">{opt}</AppText>
-                    </TouchableOpacity>
-                ))}
-            </View>
-        );
-    }
-
-    return (
-        <View style={styles.optionsContainer}>
-            <AppText style={styles.comingSoon} variant="bodySmall">This exercise type ({currentExercise.type}) is under construction for MVP.</AppText>
-            <TouchableOpacity style={styles.optionButton} disabled={isAnswerRevealed} onPress={() => handleAnswerSubmit(currentExercise.correct_answer)}>
-                <AppText style={styles.optionText} variant="h3">Skip / Auto-Correct</AppText>
-            </TouchableOpacity>
-        </View>
-    );
 }
 
 const styles = StyleSheet.create({
-    optionsContainer: {
-        flex: 1.5,
+    comingSoon: {
+        flex: 1,
         paddingHorizontal: 20,
-        justifyContent: 'flex-start',
-        gap: 12,
-    },
-    optionButton: {
-        backgroundColor: theme.colors.surface,
-        borderColor: theme.colors.border,
-        borderWidth: 2,
-        borderBottomWidth: 4, // 3D effect
-        borderRadius: 16,
-        paddingVertical: 18,
-        paddingHorizontal: 20,
+        justifyContent: 'center',
         alignItems: 'center',
     },
-    correctOption: {
-        backgroundColor: theme.colors.successLight,
-        borderColor: theme.colors.success,
-    },
-    wrongOption: {
-        backgroundColor: theme.colors.dangerLight,
-        borderColor: theme.colors.danger,
-    },
-    optionText: {
-        color: theme.colors.textMain,
-    },
-    comingSoon: {
+    comingSoonText: {
         textAlign: 'center',
-        marginBottom: 20,
-    }
+        color: theme.colors.textMuted,
+    },
 });

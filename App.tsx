@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { SQLiteProvider } from 'expo-sqlite';
 import { Provider } from 'react-redux';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import './src/i18n'; // Force i18n & RTL logic to run first
 import { store } from './src/store';
 import { initDatabase, DATABASE_NAME } from './src/db/client';
@@ -21,16 +22,18 @@ function LoadingPlaceholder() {
 
 export default function App() {
   return (
-    <Provider store={store}>
-      <Suspense fallback={<LoadingPlaceholder />}>
-        <SQLiteProvider databaseName={DATABASE_NAME} onInit={initDatabase} useSuspense>
-          <View style={styles.appContainer}>
-            <AppNavigator />
-            <StatusBar style="auto" />
-          </View>
-        </SQLiteProvider>
-      </Suspense>
-    </Provider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Provider store={store}>
+        <Suspense fallback={<LoadingPlaceholder />}>
+          <SQLiteProvider databaseName={DATABASE_NAME} onInit={initDatabase} useSuspense>
+            <View style={styles.appContainer}>
+              <AppNavigator />
+              <StatusBar style="auto" />
+            </View>
+          </SQLiteProvider>
+        </Suspense>
+      </Provider>
+    </GestureHandlerRootView>
   );
 }
 
