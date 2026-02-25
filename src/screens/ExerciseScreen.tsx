@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
-import { nextExercise, recordCorrectAnswer, endSession, resetSession, Exercise, fetchExercisesThunk, submitAnswerThunk } from '../store/slices/sessionSlice';
+import { nextExercise, recordCorrectAnswer, completeSession, resetSession, Exercise, loadExercisesForSession, processExerciseAnswer } from '../store/slices/sessionSlice';
 import { deductHeart, addXP } from '../store/slices/userSlice';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
@@ -34,8 +34,8 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
 
     useEffect(() => {
         const load = async () => {
-            const resultAction = await dispatch(fetchExercisesThunk({ levelId, isPractice: !!isPractice }));
-            if (fetchExercisesThunk.fulfilled.match(resultAction)) {
+            const resultAction = await dispatch(loadExercisesForSession({ levelId, isPractice: !!isPractice }));
+            if (loadExercisesForSession.fulfilled.match(resultAction)) {
                 if (resultAction.payload.exercises.length === 0 && isPractice) {
                     Alert.alert(t('review.lessonsReady'), "0", [{ text: t('common.back'), onPress: () => navigation.goBack() }]);
                 }
@@ -63,7 +63,7 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
             let quality = 5;
 
             // Update SRS
-            dispatch(submitAnswerThunk({ exerciseId: currentExercise.id, quality, isPractice: !!isPractice }));
+            dispatch(processExerciseAnswer({ exerciseId: currentExercise.id, quality, isPractice: !!isPractice }));
             dispatch(recordCorrectAnswer(10)); // Reward 10 XP per question
             dispatch(addXP(10)); // Update global user stats immediately (MVP scope)
 
@@ -78,7 +78,7 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
             setIsAnswerRevealed(true);
 
             // Dispatch failed answer so supermemo2 can flag isRepeatAgain
-            dispatch(submitAnswerThunk({ exerciseId: currentExercise.id, quality: 1, isPractice: !!isPractice }));
+            dispatch(processExerciseAnswer({ exerciseId: currentExercise.id, quality: 1, isPractice: !!isPractice }));
 
             if (!isPractice) {
                 dispatch(deductHeart());
@@ -102,7 +102,7 @@ export default function ExerciseScreen({ route, navigation }: ExerciseScreenProp
             dispatch(nextExercise());
         } else {
             // End of Lesson
-            dispatch(endSession());
+            dispatch(completeSession());
             const title = isPractice ? t('review.title') : t('common.continue');
             const message = isPractice ? "Review Complete!" : "You finished all exercises in this level.";
             Alert.alert(title, message, [

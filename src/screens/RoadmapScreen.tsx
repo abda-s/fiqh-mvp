@@ -9,7 +9,7 @@ import Svg, { Path } from 'react-native-svg';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
-import { fetchRoadmapLevels } from '../store/slices/curriculumSlice';
+import { loadRoadmapLevels } from '../store/slices/curriculumSlice';
 import { useTranslation } from 'react-i18next';
 
 type RoadmapScreenProps = NativeStackScreenProps<RootStackParamList, 'Roadmap'>;
@@ -36,7 +36,7 @@ export default function RoadmapScreen({ route, navigation }: RoadmapScreenProps)
 
     useFocusEffect(
         useCallback(() => {
-            dispatch(fetchRoadmapLevels(nodeId));
+            dispatch(loadRoadmapLevels(nodeId));
         }, [nodeId, dispatch])
     );
 

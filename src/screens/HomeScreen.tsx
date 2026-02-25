@@ -8,7 +8,8 @@ import { theme } from '../theme';
 import { MoonIcon, PathIcon } from '../components/CustomIcons';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
-import { fetchHomeData } from '../store/slices/curriculumSlice';
+import { loadCurriculumOverview } from '../store/slices/curriculumSlice';
+import { loadUserProfile } from '../store/slices/userSlice';
 import { useTranslation } from 'react-i18next';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getTextAlign } from '../utils/styleUtils';
@@ -45,7 +46,8 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
     useFocusEffect(
         useCallback(() => {
-            dispatch(fetchHomeData());
+            dispatch(loadUserProfile());
+            dispatch(loadCurriculumOverview());
         }, [dispatch])
     );
 

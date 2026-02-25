@@ -3,8 +3,7 @@ import * as SQLite from 'expo-sqlite';
 import { DATABASE_NAME } from '../../db/client';
 import { drizzle } from 'drizzle-orm/expo-sqlite';
 import * as schema from '../../db/schema';
-import { eq, asc, count, lte } from 'drizzle-orm';
-import { setUserStats } from './userSlice';
+import { eq, asc, count, lte, and } from 'drizzle-orm';
 import { getLocalYYYYMMDD } from '../../utils/sm2';
 
 export interface Node {
@@ -50,27 +49,12 @@ const initialState: CurriculumState = {
     error: null,
 };
 
-export const fetchHomeData = createAsyncThunk(
-    'curriculum/fetchHomeData',
-    async (_, { dispatch, rejectWithValue }) => {
+export const loadCurriculumOverview = createAsyncThunk(
+    'curriculum/loadCurriculumOverview',
+    async (_, { rejectWithValue }) => {
         try {
             const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
             const drizzleDb = drizzle(db, { schema });
-
-            const profileResult = await drizzleDb.select().from(schema.profiles).where(eq(schema.profiles.id, 1)).limit(1);
-            const profile = profileResult[0];
-
-            if (profile) {
-                dispatch(setUserStats({
-                    totalXP: profile.totalXp ?? 0,
-                    streakCount: profile.streakCount ?? 0,
-                    hearts: profile.hearts ?? 5,
-                    lastActiveAt: profile.lastActiveAt,
-                    hasOnboarded: profile.hasOnboarded === 1,
-                    knowledgeLevel: profile.knowledgeLevel,
-                    timeCommitment: profile.timeCommitment
-                }));
-            }
 
             const loadedUnits = await drizzleDb.select().from(schema.units).orderBy(schema.units.orderIndex);
 
@@ -80,14 +64,25 @@ export const fetchHomeData = createAsyncThunk(
 
                     const nodesWithProgress = await Promise.all(
                         loadedNodes.map(async (n) => {
-                            const totalResult = await db.getFirstAsync<{ c: number }>(`SELECT count(*) as c FROM levels WHERE node_id = ?`, [n.id]);
-                            const completedResult = await db.getFirstAsync<{ c: number }>(`SELECT count(*) as c FROM levels l JOIN user_progress up ON l.id = up.level_id WHERE up.is_completed = 1 AND l.node_id = ?`, [n.id]);
+                            const totalResult = await drizzleDb.select({ c: count() })
+                                .from(schema.levels)
+                                .where(eq(schema.levels.nodeId, n.id));
+
+                            const completedResult = await drizzleDb.select({ c: count() })
+                                .from(schema.levels)
+                                .innerJoin(schema.userProgress, eq(schema.levels.id, schema.userProgress.levelId))
+                                .where(
+                                    and(
+                                        eq(schema.userProgress.isCompleted, 1),
+                                        eq(schema.levels.nodeId, n.id)
+                                    )
+                                );
 
                             return {
                                 id: n.id,
                                 title: n.title,
-                                total_levels: totalResult?.c || 0,
-                                completed_levels: completedResult?.c || 0
+                                total_levels: totalResult[0]?.c || 0,
+                                completed_levels: completedResult[0]?.c || 0
                             };
                         })
                     );
@@ -113,8 +108,8 @@ export const fetchHomeData = createAsyncThunk(
     }
 );
 
-export const fetchRoadmapLevels = createAsyncThunk(
-    'curriculum/fetchRoadmapLevels',
+export const loadRoadmapLevels = createAsyncThunk(
+    'curriculum/loadRoadmapLevels',
     async (nodeId: number, { rejectWithValue }) => {
         try {
             const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
@@ -143,8 +138,8 @@ export const fetchRoadmapLevels = createAsyncThunk(
     }
 );
 
-export const fetchPendingReviews = createAsyncThunk(
-    'curriculum/fetchPendingReviews',
+export const loadPendingReviews = createAsyncThunk(
+    'curriculum/loadPendingReviews',
     async (_, { rejectWithValue }) => {
         try {
             const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
@@ -171,39 +166,39 @@ const curriculumSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-            .addCase(fetchHomeData.pending, (state) => {
+            .addCase(loadCurriculumOverview.pending, (state) => {
                 state.loadingHome = true;
                 state.error = null;
             })
-            .addCase(fetchHomeData.fulfilled, (state, action) => {
+            .addCase(loadCurriculumOverview.fulfilled, (state, action) => {
                 state.loadingHome = false;
                 state.units = action.payload;
             })
-            .addCase(fetchHomeData.rejected, (state, action) => {
+            .addCase(loadCurriculumOverview.rejected, (state, action) => {
                 state.loadingHome = false;
                 state.error = action.payload as string;
             })
-            .addCase(fetchRoadmapLevels.pending, (state) => {
+            .addCase(loadRoadmapLevels.pending, (state) => {
                 state.loadingRoadmap = true;
                 state.error = null;
             })
-            .addCase(fetchRoadmapLevels.fulfilled, (state, action) => {
+            .addCase(loadRoadmapLevels.fulfilled, (state, action) => {
                 state.loadingRoadmap = false;
                 state.roadmapLevels = action.payload;
             })
-            .addCase(fetchRoadmapLevels.rejected, (state, action) => {
+            .addCase(loadRoadmapLevels.rejected, (state, action) => {
                 state.loadingRoadmap = false;
                 state.error = action.payload as string;
             })
-            .addCase(fetchPendingReviews.pending, (state) => {
+            .addCase(loadPendingReviews.pending, (state) => {
                 state.loadingReviews = true;
                 state.error = null;
             })
-            .addCase(fetchPendingReviews.fulfilled, (state, action) => {
+            .addCase(loadPendingReviews.fulfilled, (state, action) => {
                 state.loadingReviews = false;
                 state.pendingReviewCount = action.payload;
             })
-            .addCase(fetchPendingReviews.rejected, (state, action) => {
+            .addCase(loadPendingReviews.rejected, (state, action) => {
                 state.loadingReviews = false;
                 state.error = action.payload as string;
             });

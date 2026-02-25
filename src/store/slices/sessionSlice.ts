@@ -35,8 +35,8 @@ const initialState: SessionState = {
     error: null,
 };
 
-export const fetchExercisesThunk = createAsyncThunk(
-    'session/fetchExercises',
+export const loadExercisesForSession = createAsyncThunk(
+    'session/loadExercisesForSession',
     async ({ levelId, isPractice }: { levelId: number; isPractice: boolean }, { rejectWithValue }) => {
         try {
             const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
@@ -77,8 +77,8 @@ export const fetchExercisesThunk = createAsyncThunk(
     }
 );
 
-export const submitAnswerThunk = createAsyncThunk(
-    'session/submitAnswer',
+export const processExerciseAnswer = createAsyncThunk(
+    'session/processExerciseAnswer',
     async ({ exerciseId, quality, isPractice }: { exerciseId: number; quality: number, isPractice: boolean }, { rejectWithValue }) => {
         try {
             const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
@@ -137,6 +137,31 @@ export const submitAnswerThunk = createAsyncThunk(
     }
 );
 
+export const completeSession = createAsyncThunk<void, void, { state: { session: SessionState } }>(
+    'session/completeSession',
+    async (_, { getState, dispatch }) => {
+        try {
+            const db = SQLite.openDatabaseSync(DATABASE_NAME);
+            const drizzleDb = drizzle(db, { schema });
+            const session = getState().session;
+
+            if (session.currentLevelId && session.currentLevelId !== -1) {
+                await drizzleDb.insert(schema.userProgress).values({
+                    levelId: session.currentLevelId,
+                    isCompleted: 1,
+                    highScore: 0
+                }).onConflictDoUpdate({
+                    target: schema.userProgress.levelId,
+                    set: { isCompleted: 1 }
+                });
+            }
+            dispatch(endSession());
+        } catch (e) {
+            console.error("Failed to update level progress via Drizzle:", e);
+        }
+    }
+);
+
 const sessionSlice = createSlice({
     name: 'session',
     initialState,
@@ -173,11 +198,11 @@ const sessionSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-            .addCase(fetchExercisesThunk.pending, (state) => {
+            .addCase(loadExercisesForSession.pending, (state) => {
                 state.loadingExercises = true;
                 state.error = null;
             })
-            .addCase(fetchExercisesThunk.fulfilled, (state, action) => {
+            .addCase(loadExercisesForSession.fulfilled, (state, action) => {
                 state.loadingExercises = false;
                 state.isActive = action.payload.exercises.length > 0;
                 state.currentLevelId = action.payload.levelId;
@@ -186,11 +211,11 @@ const sessionSlice = createSlice({
                 state.correctAnswers = 0;
                 state.sessionXP = 0;
             })
-            .addCase(fetchExercisesThunk.rejected, (state, action) => {
+            .addCase(loadExercisesForSession.rejected, (state, action) => {
                 state.loadingExercises = false;
                 state.error = action.payload as string;
             })
-            .addCase(submitAnswerThunk.fulfilled, (state, action) => {
+            .addCase(processExerciseAnswer.fulfilled, (state, action) => {
                 // If SM-2 algorithm determined quality < 4, it flags isRepeatAgain
                 if (action.payload.isRepeatAgain) {
                     const exerciseToRepeat = state.exercises.find(e => e.id === action.payload.exerciseId);

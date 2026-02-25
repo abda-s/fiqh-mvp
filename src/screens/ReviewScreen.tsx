@@ -8,7 +8,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store';
-import { fetchPendingReviews } from '../store/slices/curriculumSlice';
+import { loadPendingReviews } from '../store/slices/curriculumSlice';
 
 type ReviewScreenNavProp = NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
 
@@ -23,7 +23,7 @@ export default function ReviewScreen({ navigation }: ReviewScreenProps) {
 
     useFocusEffect(
         useCallback(() => {
-            dispatch(fetchPendingReviews());
+            dispatch(loadPendingReviews());
         }, [dispatch])
     );
 
