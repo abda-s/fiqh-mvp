@@ -1,0 +1,138 @@
+{
+    "profiles": [
+        {
+            "id": 1,
+            "total_xp": 0,
+            "streak_count": 0,
+            "hearts": 5,
+            "has_onboarded": 0,
+            "last_active_at": null
+        }
+    ],
+    "units": [
+        {
+            "id": 1,
+            "title": "الطهارة",
+            "description": "تعلم أحكام الوضوء الغسل والتيمم",
+            "order_index": 1
+        }
+    ],
+    "nodes": [
+        {
+            "id": 1,
+            "unit_id": 1,
+            "title": "الوضوء",
+            "order_index": 1
+        },
+        {
+            "id": 2,
+            "unit_id": 1,
+            "title": "الغسل",
+            "order_index": 2
+        },
+        {
+            "id": 3,
+            "unit_id": 1,
+            "title": "التيمم",
+            "order_index": 3
+        }
+    ],
+    "levels": [
+        {
+            "id": 1,
+            "node_id": 1,
+            "title": "فرائض الوضوء",
+            "order_index": 1
+        },
+        {
+            "id": 2,
+            "node_id": 1,
+            "title": "سنن الوضوء",
+            "order_index": 2
+        },
+        {
+            "id": 3,
+            "node_id": 1,
+            "title": "نواقض الوضوء",
+            "order_index": 3
+        }
+    ],
+    "exercises": [
+        {
+            "id": 1,
+            "level_id": 1,
+            "type": "multiple_choice",
+            "content": {
+                "question": "ما هو أول فرض من فرائض الوضوء؟",
+                "options": [
+                    "غسل الوجه",
+                    "النية",
+                    "غسل اليدين والمرفقين"
+                ]
+            },
+            "correct_answer": "النية"
+        },
+        {
+            "id": 2,
+            "level_id": 1,
+            "type": "true_false",
+            "content": {
+                "question": "غسل الوجه من فرائض الوضوء وليس سنتها."
+            },
+            "correct_answer": "true"
+        },
+        {
+            "id": 3,
+            "level_id": 2,
+            "type": "multiple_choice",
+            "content": {
+                "question": "استخدام السواك قبل الوضوء هو:",
+                "options": [
+                    "سنة مؤكدة",
+                    "مكروه",
+                    "بدعة"
+                ]
+            },
+            "correct_answer": "سنة مؤكدة"
+        },
+        {
+            "id": 4,
+            "level_id": 2,
+            "type": "true_false",
+            "content": {
+                "question": "التسمية (قول بسم الله) قبل الوضوء تعتبر فريضة."
+            },
+            "correct_answer": "false"
+        },
+        {
+            "id": 5,
+            "level_id": 3,
+            "type": "multiple_choice",
+            "content": {
+                "question": "متى يجب الغسل؟",
+                "options": [
+                    "بعد صلاة الجمعة",
+                    "بعد الجنابة",
+                    "قبل صلاة العيد",
+                    "عند ارتداء ملابس جديدة"
+                ]
+            },
+            "correct_answer": "بعد الجنابة"
+        },
+        {
+            "id": 6,
+            "level_id": 3,
+            "type": "multiple_choice",
+            "content": {
+                "question": "بماذا يتم التيمم؟",
+                "options": [
+                    "بالماء",
+                    "بالصعيد الطاهر (التراب)",
+                    "بأوراق الشجر",
+                    "بالقماش"
+                ]
+            },
+            "correct_answer": "بالصعيد الطاهر (التراب)"
+        }
+    ]
+}

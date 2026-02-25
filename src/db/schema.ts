@@ -64,34 +64,4 @@ CREATE TABLE IF NOT EXISTS srs_reviews (
 );
 `;
 
-export const seedQueries = `
--- Default Profile
-INSERT OR IGNORE INTO profiles (id, total_xp, streak_count, hearts, has_onboarded, last_active_at) VALUES (1, 0, 0, 5, 0, NULL);
 
--- Unit 1: Purification
-INSERT OR IGNORE INTO units (id, title, description, order_index) VALUES (1, 'الطهارة', 'تعلم أحكام الوضوء الغسل والتيمم', 1);
-
--- Nodes
-INSERT OR IGNORE INTO nodes (id, unit_id, title, order_index) VALUES (1, 1, 'الوضوء', 1);
-INSERT OR IGNORE INTO nodes (id, unit_id, title, order_index) VALUES (2, 1, 'الغسل', 2);
-INSERT OR IGNORE INTO nodes (id, unit_id, title, order_index) VALUES (3, 1, 'التيمم', 3);
-
--- Levels for Wudu Node
-INSERT OR IGNORE INTO levels (id, node_id, title, order_index) VALUES (1, 1, 'فرائض الوضوء', 1);
-INSERT OR IGNORE INTO levels (id, node_id, title, order_index) VALUES (2, 1, 'سنن الوضوء', 2);
-INSERT OR IGNORE INTO levels (id, node_id, title, order_index) VALUES (3, 1, 'نواقض الوضوء', 3);
-
--- Level 1 Exercises (Faraid of Wudu)
-INSERT OR IGNORE INTO exercises (id, level_id, type, content_json, correct_answer) VALUES (1, 1, 'multiple_choice', '{"question": "ما هو أول فرض من فرائض الوضوء؟", "options": ["غسل الوجه", "النية", "غسل اليدين والمرفقين"]}', 'النية');
-INSERT OR IGNORE INTO exercises (id, level_id, type, content_json, correct_answer) VALUES (2, 1, 'true_false', '{"question": "غسل الوجه من فرائض الوضوء وليس سنتها."}', 'true');
-
--- Level 2 Exercises (Sunnahs of Wudu)
-INSERT OR IGNORE INTO exercises (id, level_id, type, content_json, correct_answer) VALUES (3, 2, 'multiple_choice', '{"question": "استخدام السواك قبل الوضوء هو:", "options": ["سنة مؤكدة", "مكروه", "بدعة"]}', 'سنة مؤكدة');
-INSERT OR IGNORE INTO exercises (id, level_id, type, content_json, correct_answer) VALUES (4, 2, 'true_false', '{"question": "التسمية (قول بسم الله) قبل الوضوء تعتبر فريضة."}', 'false');
-
--- Level 3 Exercises (Ghusl)
-INSERT OR IGNORE INTO exercises (id, level_id, type, content_json, correct_answer) VALUES (5, 3, 'multiple_choice', '{"question": "متى يجب الغسل؟", "options": ["بعد صلاة الجمعة", "بعد الجنابة", "قبل صلاة العيد", "عند ارتداء ملابس جديدة"]}', 'بعد الجنابة');
-
--- Level 4 (Tayammum)
-INSERT OR IGNORE INTO exercises (id, level_id, type, content_json, correct_answer) VALUES (6, 3, 'multiple_choice', '{"question": "بماذا يتم التيمم؟", "options": ["بالماء", "بالصعيد الطاهر (التراب)", "بأوراق الشجر", "بالقماش"]}', 'بالصعيد الطاهر (التراب)');
-`;
